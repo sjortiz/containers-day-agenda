@@ -6,6 +6,7 @@
   --text: #eef2ff;
   --muted: #94a3b8;
   --accent: #2563eb;
+  --accent-text: #6ea8ff;
   --accent-2: #10b981;
   --warn: #f59e0b;
   --live: #ef4444;
@@ -35,7 +36,7 @@ body {
 }
 
 a {
-  color: var(--accent);
+  color: var(--accent-text);
 }
 
 /* ---------- Topbar ---------- */
@@ -282,7 +283,7 @@ a {
 .slot__time {
   font-size: 0.95rem;
   font-weight: 800;
-  color: var(--accent);
+  color: var(--accent-text);
   border-top: 2px solid var(--border);
   padding-top: 10px;
   margin: 0 0 10px;
@@ -473,8 +474,8 @@ a {
 
 .msd__clear {
   background: transparent;
-  color: var(--accent);
-  border: 1px solid var(--accent);
+  color: var(--accent-text);
+  border: 1px solid var(--accent-text);
   border-radius: 999px;
   padding: 4px 10px;
   font-size: 0.7rem;
