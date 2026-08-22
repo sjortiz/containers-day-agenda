@@ -26,38 +26,56 @@ interface NotifyOptions {
   tag?: string;
 }
 
+/** navigator.serviceWorker.ready pero sin colgarse si el SW nunca activa. */
+function swReadyWithTimeout(
+  ms: number,
+): Promise<ServiceWorkerRegistration | null> {
+  if (typeof navigator === 'undefined' || !('serviceWorker' in navigator)) {
+    return Promise.resolve(null);
+  }
+  return Promise.race([
+    navigator.serviceWorker.ready,
+    new Promise<null>((resolve) => setTimeout(() => resolve(null), ms)),
+  ]);
+}
+
 /**
- * Muestra una notificación. Prefiere el service worker (funciona mejor en móvil y
- * con la pestaña en segundo plano); si no hay SW, cae a la Notification API directa.
+ * Muestra una notificación y devuelve si se pudo mostrar. Prefiere el service
+ * worker: en Android Chrome `new Notification()` NO está soportado y lanza, así
+ * que el SW es obligatorio ahí. Con timeout para no quedarse colgado si el SW
+ * aún no activó, y con fallback a la Notification API directa (desktop).
  */
 export async function showNotification(
   title: string,
   { body, tag }: NotifyOptions,
-): Promise<void> {
-  if (getPermission() !== 'granted') return;
+): Promise<boolean> {
+  if (getPermission() !== 'granted') return false;
   const icon = withBase('/icons/icon-192.png');
   const badge = withBase('/icons/icon-192.png');
+  const options = {
+    body,
+    tag,
+    icon,
+    badge,
+    renotify: true,
+    requireInteraction: true,
+  } as NotificationOptions;
 
-  if ('serviceWorker' in navigator) {
+  const reg = await swReadyWithTimeout(3000);
+  if (reg) {
     try {
-      const reg = await navigator.serviceWorker.ready;
-      await reg.showNotification(title, {
-        body,
-        tag,
-        icon,
-        badge,
-        renotify: true,
-        requireInteraction: true,
-      } as NotificationOptions);
-      return;
+      await reg.showNotification(title, options);
+      return true;
     } catch {
-      /* cae al fallback */
+      /* cae al fallback directo */
     }
   }
 
   try {
     new Notification(title, { body, tag, icon });
+    return true;
   } catch {
-    /* algunos navegadores exigen SW para notificar; sin más opciones */
+    // Android exige SW; si llegamos aquí sin SW listo, no hay forma de mostrarla.
+    return false;
   }
 }

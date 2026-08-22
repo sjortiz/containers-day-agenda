@@ -19,6 +19,14 @@ export default function UpcomingBanner({ session, tz, now }: Props) {
   const speaker = session.speakers.length
     ? ` · ${session.speakers.join(', ')}`
     : '';
+  // Breaks/ceremonias no son "charlas": etiqueta neutra.
+  const label = session.isService
+    ? soon
+      ? '¡Ya casi! A continuación'
+      : 'A continuación'
+    : soon
+      ? '¡Prepárate! Tu próxima charla'
+      : 'Tu próxima charla';
 
   return (
     <aside
@@ -26,9 +34,7 @@ export default function UpcomingBanner({ session, tz, now }: Props) {
       role="status"
       aria-live="polite"
     >
-      <div className="banner__label">
-        {soon ? '¡Prepárate! Tu próxima charla' : 'Tu próxima charla'}
-      </div>
+      <div className="banner__label">{label}</div>
       <div className="banner__title">{session.title}</div>
       <div className="banner__meta">
         🕒 {formatTime(session.start, tz)} · 📍 {session.room}

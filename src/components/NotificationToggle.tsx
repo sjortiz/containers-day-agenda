@@ -7,6 +7,7 @@ interface Props {
   enabled: boolean;
   onToggle: () => void;
   onTest: () => void;
+  testMsg?: string | null;
 }
 
 export default function NotificationToggle({
@@ -14,6 +15,7 @@ export default function NotificationToggle({
   enabled,
   onToggle,
   onTest,
+  testMsg,
 }: Props) {
   if (permission === 'unsupported') {
     // Detectar iOS y si está instalada como PWA
@@ -71,6 +73,12 @@ export default function NotificationToggle({
       )}
       <span className="notif__hint">
         Te avisamos 10 min antes de cada charla mientras la app esté abierta.
+        {testMsg ? (
+          <>
+            <br />
+            {testMsg}
+          </>
+        ) : null}
       </span>
     </div>
   );

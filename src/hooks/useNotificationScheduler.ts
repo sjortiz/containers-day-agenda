@@ -51,8 +51,15 @@ export function useNotificationScheduler({
         const speaker = s.speakers.length
           ? ` · ${s.speakers.join(', ')}`
           : '';
-        void showNotification(`Tu charla empieza en ${mins} min`, {
-          body: `${s.title}\n📍 ${s.room}${speaker}`,
+        // Breaks/ceremonias no son "charlas": título genérico.
+        const heading = s.isService
+          ? `${s.title} en ${mins} min`
+          : `Tu charla empieza en ${mins} min`;
+        const body = s.isService
+          ? `📍 ${s.room}`
+          : `${s.title}\n📍 ${s.room}${speaker}`;
+        void showNotification(heading, {
+          body,
           tag: `session-${s.id}`,
         });
       }

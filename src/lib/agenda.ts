@@ -51,6 +51,22 @@ export function filterSessions(
   });
 }
 
+/**
+ * IDs que se avisan automáticamente sin que el usuario los marque: los
+ * servicios (registro, breaks, ceremonias) y cualquier sesión que sea la única
+ * en su franja horaria (Keynote, Opening Remarks, etc. — no hay nada que elegir).
+ */
+export function autoAnnouncedIds(agenda: Agenda): Set<string> {
+  const ids = new Set<string>();
+  for (const slot of groupByStart(agenda.sessions)) {
+    const alone = slot.sessions.length === 1;
+    for (const s of slot.sessions) {
+      if (s.isService || alone) ids.add(s.id);
+    }
+  }
+  return ids;
+}
+
 /** Charlas seleccionadas ordenadas por hora de inicio. */
 export function selectedSessions(
   agenda: Agenda,

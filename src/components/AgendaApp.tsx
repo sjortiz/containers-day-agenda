@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import type { Agenda } from '@/types';
 import type { Filters } from '@/lib/agenda';
 import {
+  autoAnnouncedIds,
   filterSessions,
   groupByStart,
   nextUpcomingSelected,
@@ -22,6 +23,7 @@ import SessionCard from './SessionCard';
 import FiltersBar from './Filters';
 import UpcomingBanner from './UpcomingBanner';
 import NotificationToggle from './NotificationToggle';
+import InstallPrompt from './InstallPrompt';
 
 const NOTIF_ENABLED_KEY = 'cd-agenda:notif-enabled:v1';
 
@@ -41,6 +43,15 @@ export default function AgendaApp({ agenda }: { agenda: Agenda }) {
   const [permission, setPermission] = useState<NotifPermission>('default');
   const [notifEnabled, setNotifEnabled] = useState(false);
   const [isStandalone, setIsStandalone] = useState(false);
+  const [testMsg, setTestMsg] = useState<string | null>(null);
+
+  // Bloques sin opción (breaks, ceremonias, charlas únicas en su franja) se
+  // avisan solos, sin que el usuario los marque; unimos con su selección.
+  const autoIds = useMemo(() => autoAnnouncedIds(agenda), [agenda]);
+  const announceIds = useMemo(
+    () => new Set<string>([...selectedIds, ...autoIds]),
+    [selectedIds, autoIds],
+  );
 
   const topbarRef = useRef<HTMLElement>(null);
 
@@ -82,7 +93,7 @@ export default function AgendaApp({ agenda }: { agenda: Agenda }) {
 
   useNotificationScheduler({
     agenda,
-    selectedIds,
+    selectedIds: announceIds,
     enabled: notifEnabled && permission === 'granted',
   });
 
@@ -106,11 +117,17 @@ export default function AgendaApp({ agenda }: { agenda: Agenda }) {
     }
   };
 
-  const handleTest = () => {
-    void showNotification('Notificación de prueba 🔔', {
+  const handleTest = async () => {
+    setTestMsg('Enviando…');
+    const ok = await showNotification('Notificación de prueba 🔔', {
       body: 'Así se verá el aviso antes de tu charla.',
       tag: 'test',
     });
+    setTestMsg(
+      ok
+        ? '✅ Enviada. En el móvil aparece en la barra/bandeja de notificaciones, no como ventana.'
+        : '⚠️ No se pudo mostrar. Revisa el permiso de notificaciones del sitio en tu navegador.',
+    );
   };
 
   const results = useMemo(
@@ -118,7 +135,7 @@ export default function AgendaApp({ agenda }: { agenda: Agenda }) {
     [agenda, filters, selectedIds],
   );
   const slots = useMemo(() => groupByStart(results), [results]);
-  const upcoming = nextUpcomingSelected(agenda, selectedIds, now || undefined);
+  const upcoming = nextUpcomingSelected(agenda, announceIds, now || undefined);
 
   const dayHeading = agenda.sessions.length
     ? formatDayHeading(agenda.sessions[0].start, agenda.timezone)
@@ -143,6 +160,8 @@ export default function AgendaApp({ agenda }: { agenda: Agenda }) {
       </header>
 
       <main className="container">
+        <InstallPrompt />
+
         {hydrated && isStandalone && selectedIds.size === 0 && (
           <div className="callout" role="note">
             <strong>📲 Estás en la app instalada.</strong> Tu selección del
@@ -157,6 +176,7 @@ export default function AgendaApp({ agenda }: { agenda: Agenda }) {
           enabled={notifEnabled}
           onToggle={handleToggleNotif}
           onTest={handleTest}
+          testMsg={testMsg}
         />
 
         <UpcomingBanner session={upcoming} tz={agenda.timezone} now={now} />
