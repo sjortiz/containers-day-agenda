@@ -16,6 +16,26 @@ export default function NotificationToggle({
   onTest,
 }: Props) {
   if (permission === 'unsupported') {
+    // Detectar iOS y si está instalada como PWA
+    let isIOS = false;
+    let standalone = false;
+    if (typeof window !== 'undefined') {
+      isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+              (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+      standalone = window.matchMedia('(display-mode: standalone)').matches ||
+                   (navigator as any).standalone === true;
+    }
+
+    // Mensaje específico para iOS no instalado
+    if (isIOS && !standalone) {
+      return (
+        <p className="notif notif--muted">
+          En iPhone/iPad: toca Compartir ▸ 'Agregar a inicio' y abre la app desde el ícono para activar avisos (requiere iOS 16.4+). Mientras tanto verás el aviso en el banner de arriba.
+        </p>
+      );
+    }
+
+    // Mensaje genérico para otros casos
     return (
       <p className="notif notif--muted">
         Tu navegador no soporta notificaciones. Igual verás el aviso en el banner
