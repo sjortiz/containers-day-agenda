@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import type { Agenda } from '@/types';
 import type { Filters } from '@/lib/agenda';
 import {
@@ -41,12 +41,34 @@ export default function AgendaApp({ agenda }: { agenda: Agenda }) {
   const [permission, setPermission] = useState<NotifPermission>('default');
   const [notifEnabled, setNotifEnabled] = useState(false);
 
+  const topbarRef = useRef<HTMLElement>(null);
+
   useEffect(() => {
     setPermission(getPermission());
     setNotifEnabled(
       window.localStorage.getItem(NOTIF_ENABLED_KEY) === 'true' &&
         getPermission() === 'granted',
     );
+  }, []);
+
+  useEffect(() => {
+    const updateTopbarHeight = () => {
+      if (topbarRef.current) {
+        const height = topbarRef.current.offsetHeight;
+        document.documentElement.style.setProperty('--topbar-h', `${height}px`);
+      }
+    };
+
+    updateTopbarHeight();
+
+    const observer = new ResizeObserver(updateTopbarHeight);
+    if (topbarRef.current) {
+      observer.observe(topbarRef.current);
+    }
+
+    return () => {
+      observer.disconnect();
+    };
   }, []);
 
   useNotificationScheduler({
@@ -95,7 +117,7 @@ export default function AgendaApp({ agenda }: { agenda: Agenda }) {
 
   return (
     <>
-      <header className="topbar">
+      <header ref={topbarRef} className="topbar">
         <div className="topbar__inner">
           <div className="topbar__text">
             <h1 className="topbar__title">

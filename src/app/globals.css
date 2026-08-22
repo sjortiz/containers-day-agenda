@@ -203,7 +203,7 @@ a {
 /* ---------- Filters ---------- */
 .filters {
   position: sticky;
-  top: 54px;
+  top: var(--topbar-h, 72px);
   z-index: 15;
   background: var(--bg);
   padding: 10px 0 12px;
