@@ -13,6 +13,15 @@ export const BASE_PATH =
 /** Minutos de antelación con los que avisamos antes de cada charla. */
 export const NOTIFY_LEAD_MINUTES = 10;
 
+/**
+ * Retraso del evento (en minutos) para mostrar un cartel arriba de la agenda,
+ * tipo "⏱ El evento va ~10 min atrasado". Es solo un aviso visible: NO cambia
+ * los horarios ni los avisos locales (para eso hay que mover el agenda.json).
+ * Cambia este número para actualizar el texto, o ponlo en 0 para quitar el
+ * cartel; luego vuelve a desplegar.
+ */
+export const EVENT_DELAY_MINUTES = 10;
+
 export const APP_NAME = 'Mi Agenda · Containers Day';
 export const APP_SHORT_NAME = 'CD Agenda';
 

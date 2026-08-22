@@ -28,6 +28,7 @@ import FiltersBar from './Filters';
 import UpcomingBanner from './UpcomingBanner';
 import NotificationToggle from './NotificationToggle';
 import InstallPrompt from './InstallPrompt';
+import DelayBanner from './DelayBanner';
 
 const NOTIF_ENABLED_KEY = 'cd-agenda:notif-enabled:v1';
 
@@ -213,6 +214,8 @@ export default function AgendaApp({
       </header>
 
       <main className="container">
+        <DelayBanner />
+
         <InstallPrompt />
 
         {hydrated && isStandalone && selectedIds.size === 0 && (
