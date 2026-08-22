@@ -11,6 +11,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
+    "test": "node --import ./scripts/test-register.mjs --test \"src/**/*.test.ts\"",
+    "test:watch": "node --import ./scripts/test-register.mjs --test --watch \"src/**/*.test.ts\"",
     "make-icons": "node scripts/make-icons.mjs"
   },
   "dependencies": {
