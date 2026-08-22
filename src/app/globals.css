@@ -1,15 +1,15 @@
 :root {
-  --bg: #0b1020;
-  --bg-soft: #121a33;
-  --card: #16203f;
-  --card-hi: #1d2a52;
-  --text: #eaf0ff;
-  --muted: #9aa7c7;
-  --accent: #4f8cff;
-  --accent-2: #2ee6a6;
-  --warn: #ffb020;
-  --live: #ff5d6c;
-  --border: #26325c;
+  --bg: #0a0f1e;
+  --bg-soft: #111827;
+  --card: #1e293b;
+  --card-hi: #283548;
+  --text: #eef2ff;
+  --muted: #94a3b8;
+  --accent: #2563eb;
+  --accent-2: #10b981;
+  --warn: #f59e0b;
+  --live: #ef4444;
+  --border: #2d3a4f;
   --radius: 14px;
   --maxw: 960px;
 }
@@ -135,7 +135,7 @@ a {
 }
 .notif__btn--on {
   background: var(--accent-2);
-  color: #06231a;
+  color: #022c18;
 }
 .notif__test {
   background: transparent;
@@ -269,7 +269,7 @@ a {
 .pill--mine.pill--on {
   background: var(--accent-2);
   border-color: var(--accent-2);
-  color: #06231a;
+  color: #022c18;
 }
 
 /* ---------- Schedule ---------- */
@@ -342,8 +342,8 @@ a {
   border-radius: 999px;
 }
 .badge--live {
-  background: rgba(255, 93, 108, 0.18);
-  color: var(--live);
+  background: rgba(239, 68, 68, 0.2);
+  color: #fca5a5;
 }
 .badge--soon {
   background: rgba(255, 176, 32, 0.18);
