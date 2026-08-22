@@ -97,9 +97,11 @@ export default function AgendaApp({ agenda }: { agenda: Agenda }) {
     <>
       <header className="topbar">
         <div className="topbar__inner">
-          <div>
-            <h1 className="topbar__title">Mi Agenda · Containers Day</h1>
-            <p className="topbar__day">{dayHeading}</p>
+          <div className="topbar__text">
+            <h1 className="topbar__title">
+              Mi Agenda <span className="topbar__event">· Containers Day</span>
+            </h1>
+            <span className="topbar__day">{dayHeading}</span>
           </div>
           {hydrated && selectedIds.size > 0 && (
             <button type="button" className="topbar__clear" onClick={clear}>
