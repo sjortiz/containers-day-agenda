@@ -45,6 +45,24 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
+  // El horario publicado debe estar siempre fresco: network-first con fallback
+  // a la copia cacheada cuando no hay conexión. La app lo re-pide al avisar
+  // antes de cada charla, así que no queremos servir una versión vieja.
+  if (url.pathname.endsWith('/agenda.json')) {
+    event.respondWith(
+      fetch(req)
+        .then((res) => {
+          if (res && res.status === 200) {
+            const copy = res.clone();
+            caches.open(CACHE).then((c) => c.put(req, copy));
+          }
+          return res;
+        })
+        .catch(() => caches.match(req)),
+    );
+    return;
+  }
+
   // Resto de assets (_next, iconos, json): stale-while-revalidate.
   event.respondWith(
     caches.open(CACHE).then(async (cache) => {

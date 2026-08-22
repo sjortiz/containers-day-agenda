@@ -20,7 +20,12 @@ const CONFERENCE_TZ = 'America/Santo_Domingo';
 const CONFERENCE_UTC_OFFSET = '-04:00';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
+// La app importa este JSON en build time...
 const OUT_FILE = join(__dirname, '..', 'src', 'data', 'agenda.json');
+// ...y además lo publicamos como asset estático para que el cliente pueda
+// re-descargar el horario en runtime (al avisar antes de cada charla) y no
+// quedarse con datos viejos si la organización cambia los horarios.
+const PUBLIC_FILE = join(__dirname, '..', 'public', 'agenda.json');
 
 function withOffset(localIso) {
   if (!localIso) return null;
@@ -110,12 +115,16 @@ async function main() {
     sessions,
   };
 
+  const json = JSON.stringify(payload, null, 2) + '\n';
   mkdirSync(dirname(OUT_FILE), { recursive: true });
-  writeFileSync(OUT_FILE, JSON.stringify(payload, null, 2) + '\n', 'utf-8');
+  writeFileSync(OUT_FILE, json, 'utf-8');
+  // Copia idéntica servida como asset estático (fetch en runtime).
+  mkdirSync(dirname(PUBLIC_FILE), { recursive: true });
+  writeFileSync(PUBLIC_FILE, json, 'utf-8');
 
   const talks = sessions.filter((s) => !s.isService).length;
   console.log(
-    `[fetch-agenda] OK: ${sessions.length} sesiones (${talks} charlas), ${rooms.length} salones -> src/data/agenda.json`,
+    `[fetch-agenda] OK: ${sessions.length} sesiones (${talks} charlas), ${rooms.length} salones -> src/data/agenda.json + public/agenda.json`,
   );
 }
 

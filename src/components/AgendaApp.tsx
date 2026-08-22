@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { Agenda } from '@/types';
 import type { Filters } from '@/lib/agenda';
 import {
@@ -9,6 +9,8 @@ import {
   groupByStart,
   nextUpcomingSelected,
 } from '@/lib/agenda';
+import { fetchPublishedAgenda, isNewerAgenda } from '@/lib/agenda-remote';
+import { loadAgendaCache, saveAgendaCache } from '@/lib/storage';
 import { formatDayHeading, formatTime } from '@/lib/time';
 import {
   getPermission,
@@ -34,11 +36,41 @@ const EMPTY_FILTERS: Filters = {
   onlyMine: false,
 };
 
-export default function AgendaApp({ agenda }: { agenda: Agenda }) {
+export default function AgendaApp({
+  agenda: initialAgenda,
+}: {
+  agenda: Agenda;
+}) {
+  // La agenda vive en estado: arranca con la horneada en build, pero puede
+  // reemplazarse en runtime si descargamos un horario más reciente (ver abajo).
+  const [agenda, setAgenda] = useState<Agenda>(initialAgenda);
   const { selectedIds, hydrated, isSelected, toggle, clear } =
     useSelectedSessions();
   const now = useNow();
   const [filters, setFilters] = useState<Filters>(EMPTY_FILTERS);
+
+  // Ref con la agenda vigente para comparar dentro de callbacks estables.
+  const agendaRef = useRef(agenda);
+  useEffect(() => {
+    agendaRef.current = agenda;
+  }, [agenda]);
+
+  // Al montar: si en una visita previa guardamos un horario más nuevo que el
+  // del build, lo adoptamos para no arrancar con datos desactualizados.
+  useEffect(() => {
+    const cached = loadAgendaCache();
+    if (cached && isNewerAgenda(cached, initialAgenda)) setAgenda(cached);
+  }, [initialAgenda]);
+
+  // Vuelve a pedir el horario publicado; si cambió, reemplaza el JSON guardado
+  // y actualiza la vista. Lo dispara el scheduler (con jitter) al avisar.
+  const handleScheduleRefresh = useCallback(async () => {
+    const fresh = await fetchPublishedAgenda();
+    if (fresh && isNewerAgenda(fresh, agendaRef.current)) {
+      saveAgendaCache(fresh);
+      setAgenda(fresh);
+    }
+  }, []);
 
   const [permission, setPermission] = useState<NotifPermission>('default');
   const [notifEnabled, setNotifEnabled] = useState(false);
@@ -95,6 +127,7 @@ export default function AgendaApp({ agenda }: { agenda: Agenda }) {
     agenda,
     selectedIds: announceIds,
     enabled: notifEnabled && permission === 'granted',
+    onScheduleRefresh: handleScheduleRefresh,
   });
 
   const handleToggleNotif = async () => {
