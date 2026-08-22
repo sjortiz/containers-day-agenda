@@ -391,3 +391,116 @@ a {
   border-top: 1px solid var(--border);
   padding-top: 16px;
 }
+
+/* ---------- MultiSelectDropdown ---------- */
+.msd {
+  position: relative;
+  display: inline-block;
+}
+
+.msd__btn {
+  background: var(--card);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 12px 16px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.msd__btn:hover {
+  border-color: var(--accent);
+}
+
+.msd__btn--active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+
+.msd__panel {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  z-index: 100;
+  background: var(--card-hi);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+  min-width: 200px;
+  max-width: min(320px, calc(100vw - 32px));
+  max-height: min(400px, calc(100vh - 200px));
+  overflow: auto;
+}
+
+.msd__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--border);
+}
+
+.msd__title {
+  font-size: 0.75rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+}
+
+.msd__clear {
+  background: transparent;
+  color: var(--accent);
+  border: 1px solid var(--accent);
+  border-radius: 999px;
+  padding: 4px 10px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.msd__clear:hover {
+  background: var(--accent);
+  color: #fff;
+}
+
+.msd__list {
+  padding: 6px 0;
+}
+
+.msd__option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  cursor: pointer;
+  transition: background 0.15s;
+  min-height: 44px;
+  user-select: none;
+}
+
+.msd__option:hover {
+  background: var(--card);
+}
+
+.msd__option input[type='checkbox'] {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  cursor: pointer;
+  accent-color: var(--accent);
+}
+
+.msd__option-label {
+  font-size: 0.88rem;
+  color: var(--text);
+}
