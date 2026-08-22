@@ -52,17 +52,30 @@ export function filterSessions(
 }
 
 /**
- * IDs que se avisan automáticamente sin que el usuario los marque: los
- * servicios (registro, breaks, ceremonias) y cualquier sesión que sea la única
- * en su franja horaria (Keynote, Opening Remarks, etc. — no hay nada que elegir).
+ * IDs que se avisan automáticamente sin que el usuario los marque: los servicios
+ * (registro, breaks, ceremonias). Las charlas de única opción también entran en
+ * la agenda por defecto, pero via selección sembrada (ver `soleOptionIds`), para
+ * que desmarcarlas SÍ cancele su aviso; por eso aquí solo van los servicios.
  */
 export function autoAnnouncedIds(agenda: Agenda): Set<string> {
   const ids = new Set<string>();
+  for (const s of agenda.sessions) {
+    if (s.isService) ids.add(s.id);
+  }
+  return ids;
+}
+
+/**
+ * Charlas que son la ÚNICA opción de su franja y no son servicios: como no hay
+ * nada que elegir, arrancan marcadas por defecto (las sembramos en la selección
+ * la primera vez que se ven). La persona puede desmarcarlas si no quiere el aviso.
+ */
+export function soleOptionIds(agenda: Agenda): Set<string> {
+  const ids = new Set<string>();
   for (const slot of groupByStart(agenda.sessions)) {
-    const alone = slot.sessions.length === 1;
-    for (const s of slot.sessions) {
-      if (s.isService || alone) ids.add(s.id);
-    }
+    if (slot.sessions.length !== 1) continue;
+    const s = slot.sessions[0];
+    if (!s.isService) ids.add(s.id);
   }
   return ids;
 }

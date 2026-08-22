@@ -6,6 +6,10 @@ import type { Agenda } from '@/types';
 
 const SELECTED_KEY = 'cd-agenda:selected:v1';
 const NOTIFIED_KEY = 'cd-agenda:notified:v1';
+// Charlas de "única opción" que ya sembramos como marcadas por defecto. Las
+// guardamos aparte para sembrar cada una una sola vez: si la persona la desmarca
+// luego, no se la volvemos a marcar en la siguiente carga.
+const SOLE_SEEDED_KEY = 'cd-agenda:sole-seeded:v1';
 // Última agenda descargada en runtime. Si en una visita bajamos un horario más
 // nuevo que el del build, lo guardamos aquí para que la app no arranque vieja.
 const AGENDA_KEY = 'cd-agenda:data:v1';
@@ -36,6 +40,9 @@ export const saveSelected = (set: Set<string>) => saveSet(SELECTED_KEY, set);
 
 export const loadNotified = () => loadSet(NOTIFIED_KEY);
 export const saveNotified = (set: Set<string>) => saveSet(NOTIFIED_KEY, set);
+
+export const loadSoleSeeded = () => loadSet(SOLE_SEEDED_KEY);
+export const saveSoleSeeded = (set: Set<string>) => saveSet(SOLE_SEEDED_KEY, set);
 
 /** Valida mínimamente que el objeto parezca una Agenda antes de confiar en él. */
 function looksLikeAgenda(data: unknown): data is Agenda {

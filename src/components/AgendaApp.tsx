@@ -8,6 +8,7 @@ import {
   filterSessions,
   groupByStart,
   nextUpcomingSelected,
+  soleOptionIds,
 } from '@/lib/agenda';
 import { fetchPublishedAgenda, isNewerAgenda } from '@/lib/agenda-remote';
 import { loadAgendaCache, saveAgendaCache } from '@/lib/storage';
@@ -45,7 +46,7 @@ export default function AgendaApp({
   // La agenda vive en estado: arranca con la horneada en build, pero puede
   // reemplazarse en runtime si descargamos un horario más reciente (ver abajo).
   const [agenda, setAgenda] = useState<Agenda>(initialAgenda);
-  const { selectedIds, hydrated, isSelected, toggle, clear } =
+  const { selectedIds, hydrated, isSelected, toggle, clear, seedDefaults } =
     useSelectedSessions();
   const now = useNow();
   const [filters, setFilters] = useState<Filters>(EMPTY_FILTERS);
@@ -85,6 +86,15 @@ export default function AgendaApp({
     () => new Set<string>([...selectedIds, ...autoIds]),
     [selectedIds, autoIds],
   );
+
+  // Charlas que son única opción de su franja: las sembramos marcadas por defecto
+  // (una sola vez cada una) cuando ya hidratamos y conocemos la agenda vigente.
+  // Así entran en la selección normal: cuentan como propias, salen en "Solo las
+  // mías" y avisan — pero la persona puede desmarcarlas y el aviso se cancela.
+  const soleIds = useMemo(() => soleOptionIds(agenda), [agenda]);
+  useEffect(() => {
+    if (hydrated) seedDefaults(soleIds);
+  }, [hydrated, soleIds, seedDefaults]);
 
   const topbarRef = useRef<HTMLElement>(null);
 
