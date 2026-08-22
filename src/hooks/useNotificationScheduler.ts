@@ -4,6 +4,7 @@ import { useEffect, useRef } from 'react';
 import type { Agenda } from '@/types';
 import { NOTIFY_LEAD_MINUTES } from '@/config';
 import { toMs } from '@/lib/time';
+import { reconcileNotified } from '@/lib/agenda';
 import { showNotification } from '@/lib/notifications';
 import { loadNotified, saveNotified } from '@/lib/storage';
 
@@ -27,9 +28,20 @@ export function useNotificationScheduler({
 }: Params): void {
   const notifiedRef = useRef<Set<string>>(new Set());
 
+  // Al montar (y si cambia la agenda por un rebuild), reconciliamos los avisos
+  // ya emitidos contra los horarios vigentes: si una charla se movió a más tarde,
+  // su aviso debe volver a quedar pendiente para dispararse a la nueva hora.
   useEffect(() => {
-    notifiedRef.current = loadNotified();
-  }, []);
+    const stored = loadNotified();
+    const reconciled = reconcileNotified(
+      stored,
+      agenda,
+      Date.now(),
+      NOTIFY_LEAD_MINUTES * 60000,
+    );
+    notifiedRef.current = reconciled;
+    if (reconciled.size !== stored.size) saveNotified(reconciled);
+  }, [agenda]);
 
   useEffect(() => {
     if (!enabled) return;

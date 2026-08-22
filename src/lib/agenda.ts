@@ -67,6 +67,33 @@ export function autoAnnouncedIds(agenda: Agenda): Set<string> {
   return ids;
 }
 
+/**
+ * Reconcilia el set de "ya avisado" contra la agenda vigente. Cuando la
+ * organización mueve los horarios, un ID que ya disparó su aviso al horario
+ * viejo debe volver a quedar pendiente si su NUEVA ventana de aviso todavía no
+ * llegó, para que el recordatorio se dispare a la hora correcta. También
+ * descarta IDs de sesiones que ya no existen.
+ *
+ * Mantiene marcados solo los avisos cuya ventana ya abrió (now >= start - lead),
+ * así no re-notificamos charlas en curso o ya pasadas.
+ */
+export function reconcileNotified(
+  notified: Set<string>,
+  agenda: Agenda,
+  now: number,
+  leadMs: number,
+): Set<string> {
+  const byId = new Map(agenda.sessions.map((s) => [s.id, s] as const));
+  const next = new Set<string>();
+  for (const id of notified) {
+    const s = byId.get(id);
+    if (!s) continue; // sesión eliminada/renombrada: limpiamos el flag huérfano
+    if (now >= toMs(s.start) - leadMs) next.add(id); // ventana ya abierta: se queda
+    // ventana aún futura -> lo dejamos fuera para que el aviso se re-dispare
+  }
+  return next;
+}
+
 /** Charlas seleccionadas ordenadas por hora de inicio. */
 export function selectedSessions(
   agenda: Agenda,
