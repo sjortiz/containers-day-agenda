@@ -1,0 +1,172 @@
+'use client';
+
+import { useEffect, useMemo, useState } from 'react';
+import type { Agenda } from '@/types';
+import type { Filters } from '@/lib/agenda';
+import {
+  filterSessions,
+  groupByStart,
+  nextUpcomingSelected,
+} from '@/lib/agenda';
+import { formatDayHeading, formatTime } from '@/lib/time';
+import {
+  getPermission,
+  requestPermission,
+  showNotification,
+  type NotifPermission,
+} from '@/lib/notifications';
+import { useSelectedSessions } from '@/hooks/useSelectedSessions';
+import { useNow } from '@/hooks/useNow';
+import { useNotificationScheduler } from '@/hooks/useNotificationScheduler';
+import SessionCard from './SessionCard';
+import FiltersBar from './Filters';
+import UpcomingBanner from './UpcomingBanner';
+import NotificationToggle from './NotificationToggle';
+
+const NOTIF_ENABLED_KEY = 'cd-agenda:notif-enabled:v1';
+
+const EMPTY_FILTERS: Filters = {
+  rooms: new Set(),
+  labels: new Set(),
+  query: '',
+  onlyMine: false,
+};
+
+export default function AgendaApp({ agenda }: { agenda: Agenda }) {
+  const { selectedIds, hydrated, isSelected, toggle, clear } =
+    useSelectedSessions();
+  const now = useNow();
+  const [filters, setFilters] = useState<Filters>(EMPTY_FILTERS);
+
+  const [permission, setPermission] = useState<NotifPermission>('default');
+  const [notifEnabled, setNotifEnabled] = useState(false);
+
+  useEffect(() => {
+    setPermission(getPermission());
+    setNotifEnabled(
+      window.localStorage.getItem(NOTIF_ENABLED_KEY) === 'true' &&
+        getPermission() === 'granted',
+    );
+  }, []);
+
+  useNotificationScheduler({
+    agenda,
+    selectedIds,
+    enabled: notifEnabled && permission === 'granted',
+  });
+
+  const handleToggleNotif = async () => {
+    if (notifEnabled) {
+      setNotifEnabled(false);
+      window.localStorage.setItem(NOTIF_ENABLED_KEY, 'false');
+      return;
+    }
+    let perm = getPermission();
+    if (perm === 'default') perm = await requestPermission();
+    setPermission(perm);
+    const on = perm === 'granted';
+    setNotifEnabled(on);
+    window.localStorage.setItem(NOTIF_ENABLED_KEY, on ? 'true' : 'false');
+    if (on) {
+      void showNotification('¡Avisos activados! 🔔', {
+        body: 'Te avisaremos 10 min antes de cada charla de tu agenda.',
+        tag: 'welcome',
+      });
+    }
+  };
+
+  const handleTest = () => {
+    void showNotification('Notificación de prueba 🔔', {
+      body: 'Así se verá el aviso antes de tu charla.',
+      tag: 'test',
+    });
+  };
+
+  const results = useMemo(
+    () => filterSessions(agenda, filters, selectedIds),
+    [agenda, filters, selectedIds],
+  );
+  const slots = useMemo(() => groupByStart(results), [results]);
+  const upcoming = nextUpcomingSelected(agenda, selectedIds, now || undefined);
+
+  const dayHeading = agenda.sessions.length
+    ? formatDayHeading(agenda.sessions[0].start, agenda.timezone)
+    : '';
+
+  return (
+    <>
+      <header className="topbar">
+        <div className="topbar__inner">
+          <div>
+            <h1 className="topbar__title">Mi Agenda · Containers Day</h1>
+            <p className="topbar__day">{dayHeading}</p>
+          </div>
+          {hydrated && selectedIds.size > 0 && (
+            <button type="button" className="topbar__clear" onClick={clear}>
+              Vaciar ({selectedIds.size})
+            </button>
+          )}
+        </div>
+      </header>
+
+      <main className="container">
+        <NotificationToggle
+          permission={permission}
+          enabled={notifEnabled}
+          onToggle={handleToggleNotif}
+          onTest={handleTest}
+        />
+
+        <UpcomingBanner session={upcoming} tz={agenda.timezone} now={now} />
+
+        <FiltersBar
+          agenda={agenda}
+          filters={filters}
+          onChange={setFilters}
+          selectedCount={selectedIds.size}
+          resultCount={results.length}
+        />
+
+        {slots.length === 0 ? (
+          <p className="empty">
+            {filters.onlyMine
+              ? 'Aún no has agregado charlas a tu agenda. Marca ★ en las que te interesen.'
+              : 'Ninguna sesión coincide con esos filtros.'}
+          </p>
+        ) : (
+          <div className="schedule">
+            {slots.map((slot) => (
+              <section key={slot.start} className="slot">
+                <h2 className="slot__time">
+                  {formatTime(slot.start, agenda.timezone)}
+                </h2>
+                <div className="slot__cards">
+                  {slot.sessions.map((s) => (
+                    <SessionCard
+                      key={s.id}
+                      session={s}
+                      tz={agenda.timezone}
+                      selected={isSelected(s.id)}
+                      onToggle={toggle}
+                      now={now}
+                    />
+                  ))}
+                </div>
+              </section>
+            ))}
+          </div>
+        )}
+
+        <footer className="footer">
+          <p>
+            Datos de{' '}
+            <a href={agenda.source} target="_blank" rel="noreferrer">
+              containers.day/agenda
+            </a>
+            . Tu selección se guarda solo en este dispositivo.
+          </p>
+        </footer>
+      </main>
+    </>
+  );
+}

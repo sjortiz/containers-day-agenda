@@ -1,0 +1,428 @@
+{
+  "source": "https://containers.day/agenda/",
+  "timezone": "America/Santo_Domingo",
+  "utcOffset": "-04:00",
+  "fetchedAt": "2026-08-22T03:39:53.359Z",
+  "rooms": [
+    "Salón Principal",
+    "Virtual",
+    "Octagonal 1",
+    "Octagonal 2",
+    "Octagonal 3"
+  ],
+  "labels": [
+    "Arquitectura",
+    "Carrera",
+    "Cloud",
+    "Contenedores",
+    "Datos",
+    "DevOps",
+    "IA",
+    "Kubernetes",
+    "Observabilidad",
+    "Platform Engineering",
+    "Seguridad"
+  ],
+  "sessions": [
+    {
+      "id": "2bcf0ce1-2837-4476-85e7-eb9c87ba9a8c",
+      "title": "Registration",
+      "room": "Salón Principal",
+      "speakers": [],
+      "labels": [],
+      "isService": true,
+      "start": "2026-08-22T08:00:00-04:00",
+      "end": "2026-08-22T08:30:00-04:00"
+    },
+    {
+      "id": "8a72ef1f-9b3f-42ba-a8da-79a7ba5d9f4b",
+      "title": "Opening Remarks",
+      "room": "Salón Principal",
+      "speakers": [],
+      "labels": [],
+      "isService": true,
+      "start": "2026-08-22T08:30:00-04:00",
+      "end": "2026-08-22T09:00:00-04:00"
+    },
+    {
+      "id": "1303446",
+      "title": "El ingeniero AI native",
+      "room": "Salón Principal",
+      "speakers": [
+        "Fabrizio Sgura"
+      ],
+      "labels": [
+        "IA",
+        "Carrera",
+        "Platform Engineering"
+      ],
+      "isService": false,
+      "start": "2026-08-22T09:00:00-04:00",
+      "end": "2026-08-22T09:45:00-04:00"
+    },
+    {
+      "id": "1305421",
+      "title": "El poder de los datos",
+      "room": "Salón Principal",
+      "speakers": [
+        "Darian Vargas"
+      ],
+      "labels": [
+        "Datos"
+      ],
+      "isService": false,
+      "start": "2026-08-22T09:45:00-04:00",
+      "end": "2026-08-22T10:30:00-04:00"
+    },
+    {
+      "id": "1310455",
+      "title": "Bridging Academia and Industry: The Scale2Connect Playbook for Deep Tech Commercialization",
+      "room": "Virtual",
+      "speakers": [
+        "Michail Mandamadiotis"
+      ],
+      "labels": [
+        "IA"
+      ],
+      "isService": false,
+      "start": "2026-08-22T10:00:00-04:00",
+      "end": "2026-08-22T10:30:00-04:00"
+    },
+    {
+      "id": "1305419",
+      "title": "Una odisea más allá de la IA",
+      "room": "Salón Principal",
+      "speakers": [
+        "José Elías"
+      ],
+      "labels": [
+        "IA"
+      ],
+      "isService": false,
+      "start": "2026-08-22T10:30:00-04:00",
+      "end": "2026-08-22T12:00:00-04:00"
+    },
+    {
+      "id": "7dd5c2d1-131b-4bc0-8933-c78ac374c68b",
+      "title": "Break",
+      "room": "Salón Principal",
+      "speakers": [],
+      "labels": [],
+      "isService": true,
+      "start": "2026-08-22T12:00:00-04:00",
+      "end": "2026-08-22T13:00:00-04:00"
+    },
+    {
+      "id": "1285014",
+      "title": "Del Servidor al Usuario: Cómo la Infraestructura Define la Experiencia Digital",
+      "room": "Octagonal 1",
+      "speakers": [
+        "Antonio José Lorenzo"
+      ],
+      "labels": [
+        "IA",
+        "Arquitectura",
+        "Seguridad"
+      ],
+      "isService": false,
+      "start": "2026-08-22T13:00:00-04:00",
+      "end": "2026-08-22T13:30:00-04:00"
+    },
+    {
+      "id": "1299124",
+      "title": "Iniciando con .NET MAUI",
+      "room": "Octagonal 2",
+      "speakers": [
+        "Leomaris Reyes"
+      ],
+      "labels": [
+        "Arquitectura"
+      ],
+      "isService": false,
+      "start": "2026-08-22T13:00:00-04:00",
+      "end": "2026-08-22T13:30:00-04:00"
+    },
+    {
+      "id": "1286410",
+      "title": "Cloud Inteligente: Automatizando despliegues en AWS ECS con AI y CloudFormation",
+      "room": "Salón Principal",
+      "speakers": [
+        "Eneldo Serrata"
+      ],
+      "labels": [
+        "DevOps",
+        "Cloud",
+        "IA"
+      ],
+      "isService": false,
+      "start": "2026-08-22T13:00:00-04:00",
+      "end": "2026-08-22T13:30:00-04:00"
+    },
+    {
+      "id": "1289171",
+      "title": "De la imagen base al runtime: anatomía ofensiva del supply chain en contenedores",
+      "room": "Octagonal 1",
+      "speakers": [
+        "Leonardo Núñez"
+      ],
+      "labels": [
+        "Seguridad",
+        "Contenedores",
+        "DevOps"
+      ],
+      "isService": false,
+      "start": "2026-08-22T13:30:00-04:00",
+      "end": "2026-08-22T14:00:00-04:00"
+    },
+    {
+      "id": "1297063",
+      "title": "AI for Wizards",
+      "room": "Octagonal 2",
+      "speakers": [
+        "Raynnier Gomez"
+      ],
+      "labels": [
+        "IA",
+        "Contenedores",
+        "Cloud"
+      ],
+      "isService": false,
+      "start": "2026-08-22T13:30:00-04:00",
+      "end": "2026-08-22T14:00:00-04:00"
+    },
+    {
+      "id": "1268802",
+      "title": "How I 10xed My Career Through Open Source (and how you can do it too)",
+      "room": "Salón Principal",
+      "speakers": [
+        "Christopher Tineo"
+      ],
+      "labels": [
+        "Carrera"
+      ],
+      "isService": false,
+      "start": "2026-08-22T13:30:00-04:00",
+      "end": "2026-08-22T14:00:00-04:00"
+    },
+    {
+      "id": "ed9120a4-cca6-4126-9604-3cd574a1d0c3",
+      "title": "Break PM",
+      "room": "Salón Principal",
+      "speakers": [],
+      "labels": [],
+      "isService": true,
+      "start": "2026-08-22T14:00:00-04:00",
+      "end": "2026-08-22T14:30:00-04:00"
+    },
+    {
+      "id": "1293116",
+      "title": "Guardarraíles, No Guardias: Seguridad por Diseño de Docker al Multi-Cloud",
+      "room": "Octagonal 1",
+      "speakers": [
+        "Miguel De Los Santos"
+      ],
+      "labels": [
+        "Cloud",
+        "Seguridad",
+        "Contenedores"
+      ],
+      "isService": false,
+      "start": "2026-08-22T14:30:00-04:00",
+      "end": "2026-08-22T15:00:00-04:00"
+    },
+    {
+      "id": "1305426",
+      "title": "IA Aplicada: Transformando la Operacion Empresarial con Agentes Autonomos",
+      "room": "Octagonal 2",
+      "speakers": [
+        "Erik Taveras"
+      ],
+      "labels": [
+        "IA"
+      ],
+      "isService": false,
+      "start": "2026-08-22T14:30:00-04:00",
+      "end": "2026-08-22T15:30:00-04:00"
+    },
+    {
+      "id": "1305490",
+      "title": "Panel de IA",
+      "room": "Octagonal 3",
+      "speakers": [
+        "Albert Pujols",
+        "Bidó Perez",
+        "Caro Jansen",
+        "Juan Manuel Medina Acosta"
+      ],
+      "labels": [
+        "IA"
+      ],
+      "isService": false,
+      "start": "2026-08-22T14:30:00-04:00",
+      "end": "2026-08-22T15:30:00-04:00"
+    },
+    {
+      "id": "1302439",
+      "title": "AI vulnerability impact assessment",
+      "room": "Salón Principal",
+      "speakers": [
+        "Shailyn Ortiz"
+      ],
+      "labels": [
+        "Seguridad",
+        "IA",
+        "DevOps"
+      ],
+      "isService": false,
+      "start": "2026-08-22T14:30:00-04:00",
+      "end": "2026-08-22T15:00:00-04:00"
+    },
+    {
+      "id": "1290871",
+      "title": "From Base Image to Breach: Inside a Supply Chain Attack",
+      "room": "Octagonal 1",
+      "speakers": [
+        "Karla Yofraciel Aquino Meran"
+      ],
+      "labels": [
+        "Seguridad",
+        "Contenedores",
+        "DevOps"
+      ],
+      "isService": false,
+      "start": "2026-08-22T15:00:00-04:00",
+      "end": "2026-08-22T15:30:00-04:00"
+    },
+    {
+      "id": "1233450",
+      "title": "The future is here - AI, Robotics, Digital Surveying and the Future of Work",
+      "room": "Salón Principal",
+      "speakers": [
+        "Bladimir Garcia"
+      ],
+      "labels": [
+        "Carrera",
+        "Seguridad"
+      ],
+      "isService": false,
+      "start": "2026-08-22T15:00:00-04:00",
+      "end": "2026-08-22T15:30:00-04:00"
+    },
+    {
+      "id": "1303327",
+      "title": "Kubernetes Multi-Region: Architecting for Chaos",
+      "room": "Octagonal 1",
+      "speakers": [
+        "Raúl Sánchez"
+      ],
+      "labels": [
+        "Cloud",
+        "Kubernetes",
+        "Arquitectura"
+      ],
+      "isService": false,
+      "start": "2026-08-22T15:30:00-04:00",
+      "end": "2026-08-22T16:00:00-04:00"
+    },
+    {
+      "id": "1307215",
+      "title": "Amazon EKS Auto Mode - Workshop",
+      "room": "Octagonal 2",
+      "speakers": [
+        "Camilo Cortes"
+      ],
+      "labels": [
+        "Cloud",
+        "DevOps"
+      ],
+      "isService": false,
+      "start": "2026-08-22T15:30:00-04:00",
+      "end": "2026-08-22T16:30:00-04:00"
+    },
+    {
+      "id": "1270219",
+      "title": "Agentes de IA en el bucle de remediación: cómo bajar el MTTR sin perder el control del cluster",
+      "room": "Salón Principal",
+      "speakers": [
+        "Leafar Maina De Jesús"
+      ],
+      "labels": [
+        "IA",
+        "Observabilidad",
+        "Cloud"
+      ],
+      "isService": false,
+      "start": "2026-08-22T15:30:00-04:00",
+      "end": "2026-08-22T16:00:00-04:00"
+    },
+    {
+      "id": "1291603",
+      "title": "Platform Engineering in Emerging Markets: Building Developer Platforms with Limited Resources",
+      "room": "Octagonal 1",
+      "speakers": [
+        "Ayesha Yege"
+      ],
+      "labels": [
+        "Platform Engineering",
+        "DevOps",
+        "Seguridad"
+      ],
+      "isService": false,
+      "start": "2026-08-22T16:00:00-04:00",
+      "end": "2026-08-22T16:30:00-04:00"
+    },
+    {
+      "id": "1304951",
+      "title": "De las decisiones a Docker: cuando escalar con contenedores",
+      "room": "Salón Principal",
+      "speakers": [
+        "Julián Darío Luna Patiño"
+      ],
+      "labels": [
+        "Contenedores",
+        "Arquitectura",
+        "Observabilidad"
+      ],
+      "isService": false,
+      "start": "2026-08-22T16:00:00-04:00",
+      "end": "2026-08-22T16:30:00-04:00"
+    },
+    {
+      "id": "1232616",
+      "title": "The Pod Was Never Isolated: Lecciones ofensivas al romper entornos contenerizados",
+      "room": "Octagonal 1",
+      "speakers": [
+        "Luis Tangui Arias"
+      ],
+      "labels": [
+        "Seguridad",
+        "Contenedores"
+      ],
+      "isService": false,
+      "start": "2026-08-22T16:30:00-04:00",
+      "end": "2026-08-22T17:00:00-04:00"
+    },
+    {
+      "id": "1299092",
+      "title": "Contexto Exponencial",
+      "room": "Salón Principal",
+      "speakers": [
+        "Victor Corniel"
+      ],
+      "labels": [],
+      "isService": false,
+      "start": "2026-08-22T16:30:00-04:00",
+      "end": "2026-08-22T17:00:00-04:00"
+    },
+    {
+      "id": "0066fc51-945f-456f-8832-8eeb74a51a21",
+      "title": "Closing Remarks",
+      "room": "Salón Principal",
+      "speakers": [],
+      "labels": [],
+      "isService": true,
+      "start": "2026-08-22T17:00:00-04:00",
+      "end": "2026-08-22T17:30:00-04:00"
+    }
+  ]
+}

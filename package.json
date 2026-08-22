@@ -1,0 +1,29 @@
+{
+  "name": "containers-day-agenda",
+  "version": "1.0.0",
+  "private": true,
+  "description": "PWA para armar tu agenda personal de Containers Day con avisos 10 minutos antes de cada charla.",
+  "type": "module",
+  "scripts": {
+    "dev": "next dev",
+    "fetch-agenda": "node scripts/fetch-agenda.mjs",
+    "prebuild": "node scripts/fetch-agenda.mjs || echo \"[fetch-agenda] usando agenda.json existente\"",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "make-icons": "node scripts/make-icons.mjs"
+  },
+  "dependencies": {
+    "next": "^15.1.6",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "node-html-parser": "^7.0.1",
+    "sharp": "^0.33.5",
+    "typescript": "^5.7.3"
+  }
+}
