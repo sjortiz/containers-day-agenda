@@ -408,6 +408,21 @@ a {
   padding-top: 16px;
 }
 
+/* ---------- Callout (aviso de almacenamiento / app instalada) ---------- */
+.callout {
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--warn);
+  background: var(--bg-soft);
+  border-radius: var(--radius);
+  padding: 12px 14px;
+  margin-bottom: 16px;
+  font-size: 0.86rem;
+  color: var(--text);
+}
+.callout strong {
+  color: var(--warn);
+}
+
 /* ---------- MultiSelectDropdown ---------- */
 .msd {
   position: relative;

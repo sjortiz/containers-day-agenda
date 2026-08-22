@@ -40,6 +40,7 @@ export default function AgendaApp({ agenda }: { agenda: Agenda }) {
 
   const [permission, setPermission] = useState<NotifPermission>('default');
   const [notifEnabled, setNotifEnabled] = useState(false);
+  const [isStandalone, setIsStandalone] = useState(false);
 
   const topbarRef = useRef<HTMLElement>(null);
 
@@ -49,6 +50,14 @@ export default function AgendaApp({ agenda }: { agenda: Agenda }) {
       window.localStorage.getItem(NOTIF_ENABLED_KEY) === 'true' &&
         getPermission() === 'granted',
     );
+    // ¿Corremos como PWA instalada (home screen)? En iOS/WebKit el
+    // almacenamiento de la app instalada está separado del navegador, así que
+    // la selección hecha en Safari no aparece aquí: hay que elegir de nuevo.
+    const standalone =
+      window.matchMedia?.('(display-mode: standalone)').matches ||
+      (window.navigator as Navigator & { standalone?: boolean }).standalone ===
+        true;
+    setIsStandalone(!!standalone);
   }, []);
 
   useEffect(() => {
@@ -134,6 +143,15 @@ export default function AgendaApp({ agenda }: { agenda: Agenda }) {
       </header>
 
       <main className="container">
+        {hydrated && isStandalone && selectedIds.size === 0 && (
+          <div className="callout" role="note">
+            <strong>📲 Estás en la app instalada.</strong> Tu selección del
+            navegador no se transfiere aquí: en iPhone la app del inicio y
+            Safari guardan los datos por separado. Marca ★ en tus charlas dentro
+            de la app y se quedarán guardadas aquí.
+          </div>
+        )}
+
         <NotificationToggle
           permission={permission}
           enabled={notifEnabled}
@@ -187,7 +205,8 @@ export default function AgendaApp({ agenda }: { agenda: Agenda }) {
             <a href={agenda.source} target="_blank" rel="noreferrer">
               containers.day/agenda
             </a>
-            . Tu selección se guarda solo en este dispositivo.
+            . Tu selección se guarda solo en este dispositivo. En iPhone, la app
+            instalada y el navegador la guardan por separado.
           </p>
         </footer>
       </main>
