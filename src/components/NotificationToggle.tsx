@@ -32,7 +32,9 @@ export default function NotificationToggle({
     if (isIOS && !standalone) {
       return (
         <p className="notif notif--muted">
-          En iPhone/iPad: toca Compartir ▸ 'Agregar a inicio' y abre la app desde el ícono para activar avisos (requiere iOS 16.4+). Mientras tanto verás el aviso en el banner de arriba.
+          En iPhone las notificaciones se activan desde la app instalada
+          (requiere iOS 16.4+). Mientras tanto verás el aviso en el banner de
+          arriba.
         </p>
       );
     }
