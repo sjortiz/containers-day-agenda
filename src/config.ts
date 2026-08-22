@@ -20,7 +20,7 @@ export const NOTIFY_LEAD_MINUTES = 10;
  * Cambia este número para actualizar el texto, o ponlo en 0 para quitar el
  * cartel; luego vuelve a desplegar.
  */
-export const EVENT_DELAY_MINUTES = 10;
+export const EVENT_DELAY_MINUTES = 0;
 
 export const APP_NAME = 'Mi Agenda · Containers Day';
 export const APP_SHORT_NAME = 'CD Agenda';
