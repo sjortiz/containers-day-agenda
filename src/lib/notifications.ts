@@ -11,6 +11,15 @@ export function getPermission(): NotifPermission {
   return Notification.permission as NotifPermission;
 }
 
+/** ¿Estamos en iOS/iPadOS? (incluye iPad moderno, que se reporta como MacIntel táctil). */
+export function isIOS(): boolean {
+  if (typeof navigator === 'undefined') return false;
+  return (
+    /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+    (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)
+  );
+}
+
 export async function requestPermission(): Promise<NotifPermission> {
   if (!isSupported()) return 'unsupported';
   try {
@@ -26,12 +35,24 @@ interface NotifyOptions {
   tag?: string;
 }
 
-/** navigator.serviceWorker.ready pero sin colgarse si el SW nunca activa. */
-function swReadyWithTimeout(
+/**
+ * Devuelve un registration del service worker usable para mostrar notificaciones.
+ * Primero intenta uno ya activo (camino rápido: en una PWA instalada suele estarlo
+ * al abrir), y si no, espera a `navigator.serviceWorker.ready` con timeout para no
+ * colgarse si nunca activa. En iOS/Android instalado el SW es la ÚNICA vía válida
+ * (`new Notification()` no está soportado), así que conviene esperarlo bien.
+ */
+async function getSWRegistration(
   ms: number,
 ): Promise<ServiceWorkerRegistration | null> {
   if (typeof navigator === 'undefined' || !('serviceWorker' in navigator)) {
-    return Promise.resolve(null);
+    return null;
+  }
+  try {
+    const existing = await navigator.serviceWorker.getRegistration();
+    if (existing?.active) return existing;
+  } catch {
+    /* si getRegistration falla, caemos a esperar ready */
   }
   return Promise.race([
     navigator.serviceWorker.ready,
@@ -61,7 +82,7 @@ export async function showNotification(
     requireInteraction: true,
   } as NotificationOptions;
 
-  const reg = await swReadyWithTimeout(3000);
+  const reg = await getSWRegistration(5000);
   if (reg) {
     try {
       await reg.showNotification(title, options);
@@ -71,11 +92,12 @@ export async function showNotification(
     }
   }
 
+  // Fallback directo (solo desktop): en iOS/Android instalado esto lanza y por
+  // eso devolvemos false, que la UI traduce en "revisa el permiso".
   try {
     new Notification(title, { body, tag, icon });
     return true;
   } catch {
-    // Android exige SW; si llegamos aquí sin SW listo, no hay forma de mostrarla.
     return false;
   }
 }

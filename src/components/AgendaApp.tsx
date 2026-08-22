@@ -14,6 +14,7 @@ import { loadAgendaCache, saveAgendaCache } from '@/lib/storage';
 import { formatDayHeading, formatTime } from '@/lib/time';
 import {
   getPermission,
+  isIOS,
   requestPermission,
   showNotification,
   type NotifPermission,
@@ -156,10 +157,19 @@ export default function AgendaApp({
       body: 'Así se verá el aviso antes de tu charla.',
       tag: 'test',
     });
+    if (!ok) {
+      setTestMsg(
+        '⚠️ No se pudo mostrar. Revisa el permiso de notificaciones del sitio en tu navegador.',
+      );
+      return;
+    }
+    // En iPhone instalado, iOS NO muestra el banner mientras la app está abierta
+    // y al frente: la notificación se envía igual, pero aparece al bloquear la
+    // pantalla o cambiar de app. Se lo explicamos para que no parezca que falla.
     setTestMsg(
-      ok
-        ? '✅ Enviada. En el móvil aparece en la barra/bandeja de notificaciones, no como ventana.'
-        : '⚠️ No se pudo mostrar. Revisa el permiso de notificaciones del sitio en tu navegador.',
+      isIOS() && isStandalone
+        ? '✅ Enviada. En iPhone el aviso no salta mientras la app está abierta: bloquea la pantalla o cambia de app y lo verás en el centro de notificaciones.'
+        : '✅ Enviada. En el móvil aparece en la barra/bandeja de notificaciones, no como ventana.',
     );
   };
 
