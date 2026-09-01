@@ -24,6 +24,30 @@ npm run make-icons     # regenera los iconos PWA (opcional)
 npm run dev            # http://localhost:3000   (sin basePath en dev)
 ```
 
+## Skills de Claude Code
+
+Para trabajar en este proyecto con Claude Code usamos las siguientes skills de
+[vercel-labs/agent-skills](https://github.com/vercel-labs/agent-skills):
+
+- `vercel-react-best-practices`
+- `vercel-composition-patterns`
+- `vercel-react-view-transitions`
+- `web-design-guidelines`
+- `writing-guidelines`
+
+No instalamos ni usamos las skills de despliegue, CLI u optimización de Vercel,
+porque este proyecto se publica como export estático en GitHub Pages. Tampoco
+incluimos la skill de React Native porque la aplicación es una PWA web.
+
+Instalación global para Claude Code:
+
+```bash
+npx skills add vercel-labs/agent-skills --global --agent claude-code \
+  --skill vercel-composition-patterns vercel-react-best-practices \
+  vercel-react-view-transitions web-design-guidelines writing-guidelines \
+  --yes --copy
+```
+
 ## Build local
 
 ```bash
