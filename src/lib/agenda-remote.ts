@@ -7,6 +7,7 @@
  */
 import type { Agenda } from '@/types';
 import { withBase } from '@/config';
+import { looksLikeAgenda } from './agenda-validation';
 
 /** Ruta estable del horario publicado (misma copia que src/data/agenda.json). */
 const AGENDA_PATH = '/agenda.json';
@@ -18,16 +19,6 @@ export function isNewerAgenda(next: Agenda, current: Agenda): boolean {
   if (Number.isNaN(a)) return false; // sin marca válida: no lo tomamos como nuevo
   if (Number.isNaN(b)) return true;
   return a > b;
-}
-
-function looksLikeAgenda(data: unknown): data is Agenda {
-  return (
-    typeof data === 'object' &&
-    data !== null &&
-    Array.isArray((data as Agenda).sessions) &&
-    typeof (data as Agenda).timezone === 'string' &&
-    typeof (data as Agenda).fetchedAt === 'string'
-  );
 }
 
 /** Motivo por el que no se pudo obtener (o confiar en) el horario publicado. */

@@ -67,6 +67,44 @@ describe('fetchPublishedAgenda', () => {
     assert.equal(!result.ok && result.reason, 'invalid');
   });
 
+  it('devuelve reason "invalid" si una sesión tiene el ID duplicado', async () => {
+    const agenda = makeAgenda('2026-08-22T09:00:00-04:00');
+    const session = {
+      id: 'dup',
+      title: 'Charla',
+      room: 'Octagonal 1',
+      speakers: [],
+      labels: [],
+      isService: false,
+      start: '2026-08-22T09:00:00-04:00',
+      end: '2026-08-22T09:30:00-04:00',
+    };
+    const withDupIds = { ...agenda, sessions: [session, { ...session }] };
+    globalThis.fetch = (async () => ({ ok: true, json: async () => withDupIds })) as unknown as typeof fetch;
+    const result = await fetchPublishedAgenda();
+    assert.equal(result.ok, false);
+    assert.equal(!result.ok && result.reason, 'invalid');
+  });
+
+  it('devuelve reason "invalid" si una sesión termina antes (o al mismo tiempo) de empezar', async () => {
+    const agenda = makeAgenda('2026-08-22T09:00:00-04:00');
+    const session = {
+      id: '1',
+      title: 'Charla',
+      room: 'Octagonal 1',
+      speakers: [],
+      labels: [],
+      isService: false,
+      start: '2026-08-22T09:30:00-04:00',
+      end: '2026-08-22T09:00:00-04:00',
+    };
+    const withBadEnd = { ...agenda, sessions: [session] };
+    globalThis.fetch = (async () => ({ ok: true, json: async () => withBadEnd })) as unknown as typeof fetch;
+    const result = await fetchPublishedAgenda();
+    assert.equal(result.ok, false);
+    assert.equal(!result.ok && result.reason, 'invalid');
+  });
+
   it('devuelve reason "network" si fetch lanza (offline)', async () => {
     const boom = new Error('network down');
     globalThis.fetch = (async () => {

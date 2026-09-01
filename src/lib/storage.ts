@@ -3,6 +3,7 @@
  * disparamos el aviso (para no repetirlo). Todo es por-dispositivo, sin backend.
  */
 import type { Agenda } from '@/types';
+import { looksLikeAgenda } from './agenda-validation';
 
 const SELECTED_KEY = 'cd-agenda:selected:v1';
 // Ocurrencias de aviso ya disparadas, como claves `id@start` (ver
@@ -46,17 +47,6 @@ export const saveNotified = (set: Set<string>) => saveSet(NOTIFIED_KEY, set);
 
 export const loadSoleSeeded = () => loadSet(SOLE_SEEDED_KEY);
 export const saveSoleSeeded = (set: Set<string>) => saveSet(SOLE_SEEDED_KEY, set);
-
-/** Valida mínimamente que el objeto parezca una Agenda antes de confiar en él. */
-function looksLikeAgenda(data: unknown): data is Agenda {
-  return (
-    typeof data === 'object' &&
-    data !== null &&
-    Array.isArray((data as Agenda).sessions) &&
-    typeof (data as Agenda).timezone === 'string' &&
-    typeof (data as Agenda).fetchedAt === 'string'
-  );
-}
 
 export function loadAgendaCache(): Agenda | null {
   if (typeof window === 'undefined') return null;
