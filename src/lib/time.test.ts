@@ -7,6 +7,7 @@ import {
   formatDayHeading,
   minutesUntil,
   describeCountdown,
+  formatElapsed,
 } from './time';
 
 const TZ = 'America/Santo_Domingo'; // UTC-4, coincide con los offsets del evento
@@ -88,5 +89,28 @@ describe('describeCountdown', () => {
 
   it('horas y minutos', () => {
     assert.equal(describeCountdown((60 + 25) * 60000), 'en 1 h 25 min');
+  });
+});
+
+describe('formatElapsed', () => {
+  it('segundos', () => {
+    assert.equal(formatElapsed(0), '0 s');
+    assert.equal(formatElapsed(25 * 1000), '25 s');
+    assert.equal(formatElapsed(59 * 1000), '59 s');
+  });
+
+  it('minutos', () => {
+    assert.equal(formatElapsed(60 * 1000), '1 min');
+    assert.equal(formatElapsed(8 * 60 * 1000), '8 min');
+    assert.equal(formatElapsed(59 * 60 * 1000), '59 min');
+  });
+
+  it('horas', () => {
+    assert.equal(formatElapsed(60 * 60 * 1000), '1 h');
+    assert.equal(formatElapsed(3 * 60 * 60 * 1000 + 10_000), '3 h');
+  });
+
+  it('trata negativos (reloj/timestamps desalineados) como 0', () => {
+    assert.equal(formatElapsed(-5000), '0 s');
   });
 });

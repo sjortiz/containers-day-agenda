@@ -28,6 +28,7 @@ import UpcomingBanner from './UpcomingBanner';
 import NotificationToggle from './NotificationToggle';
 import InstallPrompt from './InstallPrompt';
 import DelayBanner from './DelayBanner';
+import FreshnessIndicator from './FreshnessIndicator';
 
 const NOTIF_ENABLED_KEY = 'cd-agenda:notif-enabled:v1';
 
@@ -46,7 +47,8 @@ export default function AgendaApp({
   // La agenda vive en `useAgendaRefresh`: arranca con la horneada en build,
   // pero se mantiene sincronizada con `/agenda.json` en runtime de forma
   // independiente del estado de las notificaciones (ver ese hook).
-  const { agenda } = useAgendaRefresh(initialAgenda);
+  const { agenda, status, lastSuccessfulSyncAt, lastAttemptAt } =
+    useAgendaRefresh(initialAgenda);
   const { selectedIds, hydrated, isSelected, toggle, clear, seedDefaults } =
     useSelectedSessions();
   const now = useNow();
@@ -180,6 +182,12 @@ export default function AgendaApp({
               Mi Agenda <span className="topbar__event">· Containers Day</span>
             </h1>
             <span className="topbar__day">{dayHeading}</span>
+            <FreshnessIndicator
+              status={status}
+              lastSuccessfulSyncAt={lastSuccessfulSyncAt}
+              lastAttemptAt={lastAttemptAt}
+              now={now}
+            />
           </div>
           {hydrated && selectedIds.size > 0 && (
             <button type="button" className="topbar__clear" onClick={clear}>

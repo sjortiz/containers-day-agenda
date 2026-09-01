@@ -84,6 +84,15 @@ a {
   text-transform: capitalize;
   font-weight: 500;
 }
+.freshness {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--muted);
+}
+.freshness--offline,
+.freshness--error {
+  color: var(--warn);
+}
 .topbar__clear {
   flex: none;
   background: transparent;

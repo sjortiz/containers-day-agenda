@@ -6,6 +6,7 @@ import {
   computeNextPollDelayMs,
   createAgendaRefreshController,
   deriveAgendaRefreshStatus,
+  describeFreshness,
 } from './agenda-refresh';
 
 function makeAgenda(fetchedAt: string): Agenda {
@@ -377,6 +378,94 @@ describe('deriveAgendaRefreshStatus', () => {
         hasSyncedOnce: false,
       }),
       'idle',
+    );
+  });
+});
+
+describe('describeFreshness', () => {
+  const now = Date.UTC(2026, 7, 22, 10, 0, 0);
+
+  it('"refreshing": mensaje fijo, sin depender de timestamps', () => {
+    assert.equal(
+      describeFreshness({
+        status: 'refreshing',
+        lastSuccessfulSyncAt: null,
+        lastAttemptAt: null,
+        now,
+      }),
+      'Actualizando…',
+    );
+  });
+
+  it('"offline": mensaje fijo que menciona el horario guardado', () => {
+    assert.equal(
+      describeFreshness({
+        status: 'offline',
+        lastSuccessfulSyncAt: now - 5 * 60_000,
+        lastAttemptAt: now,
+        now,
+      }),
+      'Sin conexión — mostrando horario guardado',
+    );
+  });
+
+  it('"fresh": tiempo transcurrido desde el último éxito', () => {
+    assert.equal(
+      describeFreshness({
+        status: 'fresh',
+        lastSuccessfulSyncAt: now - 25_000,
+        lastAttemptAt: now,
+        now,
+      }),
+      'Actualizado hace 25 s',
+    );
+  });
+
+  it('"fresh" sin timestamp de éxito aún: texto genérico', () => {
+    assert.equal(
+      describeFreshness({
+        status: 'fresh',
+        lastSuccessfulSyncAt: null,
+        lastAttemptAt: null,
+        now,
+      }),
+      'Actualizado',
+    );
+  });
+
+  it('"error": tiempo transcurrido desde el último intento', () => {
+    assert.equal(
+      describeFreshness({
+        status: 'error',
+        lastSuccessfulSyncAt: null,
+        lastAttemptAt: now - 8 * 60_000,
+        now,
+      }),
+      'No se pudo comprobar el horario desde hace 8 min',
+    );
+  });
+
+  it('"error" sin intento registrado aún: texto genérico', () => {
+    assert.equal(
+      describeFreshness({
+        status: 'error',
+        lastSuccessfulSyncAt: null,
+        lastAttemptAt: null,
+        now,
+      }),
+      'No se pudo comprobar el horario',
+    );
+  });
+
+  it('"idle": sin mensaje (nada que mostrar antes del primer chequeo)', () => {
+    assert.equal(
+      describeFreshness({
+        status: 'idle',
+        lastSuccessfulSyncAt: null,
+        lastAttemptAt: null,
+        now,
+      }),
+      '',
     );
   });
 });

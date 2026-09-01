@@ -17,6 +17,7 @@ import {
   type AgendaFetchFailureReason,
   type AgendaFetchResult,
 } from './agenda-remote';
+import { formatElapsed } from './time';
 
 /** Ídem `AgendaFetchFailureReason`, más `'timeout'` (propio de este nivel). */
 export type AgendaRefreshFailureReason = AgendaFetchFailureReason | 'timeout';
@@ -97,6 +98,44 @@ export function deriveAgendaRefreshStatus(state: {
     return state.lastError === 'network' ? 'offline' : 'error';
   }
   return state.hasSyncedOnce ? 'fresh' : 'idle';
+}
+
+export interface FreshnessLabelInput {
+  status: AgendaRefreshStatus;
+  lastSuccessfulSyncAt: number | null;
+  lastAttemptAt: number | null;
+  /** `Date.now()` en el momento de renderizar (inyectado para que la función siga siendo pura). */
+  now: number;
+}
+
+/**
+ * Traduce el estado agregado de frescura a un mensaje breve en español para
+ * `FreshnessIndicator`, siguiendo los ejemplos de la spec (Fase 3). Función
+ * pura -sin DOM ni reloj propio- para poder cubrirla con `node:test` en vez
+ * de requerir una librería de pruebas de DOM.
+ */
+export function describeFreshness({
+  status,
+  lastSuccessfulSyncAt,
+  lastAttemptAt,
+  now,
+}: FreshnessLabelInput): string {
+  switch (status) {
+    case 'refreshing':
+      return 'Actualizando…';
+    case 'offline':
+      return 'Sin conexión — mostrando horario guardado';
+    case 'error':
+      return lastAttemptAt !== null
+        ? `No se pudo comprobar el horario desde hace ${formatElapsed(now - lastAttemptAt)}`
+        : 'No se pudo comprobar el horario';
+    case 'fresh':
+      return lastSuccessfulSyncAt !== null
+        ? `Actualizado hace ${formatElapsed(now - lastSuccessfulSyncAt)}`
+        : 'Actualizado';
+    case 'idle':
+      return '';
+  }
 }
 
 export function createAgendaRefreshController(
