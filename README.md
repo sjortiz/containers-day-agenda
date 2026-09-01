@@ -1,7 +1,7 @@
-# Mi Agenda · Containers Day
+# Talk Track
 
-PWA que toma la agenda pública de [containers.day/agenda](https://containers.day/agenda/),
-te deja **armar tu propia agenda** (guardada en el dispositivo, sin cuenta ni backend) y
+PWA que reúne agendas de eventos —incluyendo Containers Day y APIs públicas de
+Sessionize—, te deja **armar tu propia agenda** (guardada en el dispositivo, sin cuenta ni backend) y
 te **avisa 10 minutos antes** de cada charla que elegiste, mostrando **salón, título y speaker**.
 
 Hecha con **Next.js** (export estático) para publicarse en **GitHub Pages**.
@@ -10,6 +10,8 @@ Hecha con **Next.js** (export estático) para publicarse en **GitHub Pages**.
 
 - **Datos**: `scripts/fetch-agenda.mjs` descarga y parsea la agenda a `src/data/agenda.json`
   en build time. Los horarios se guardan con el offset del evento (`America/Santo_Domingo`, UTC-4).
+- **Más eventos**: la pantalla inicial acepta endpoints API v2 de Sessionize y
+  guarda cada agenda por separado en el dispositivo.
 - **Tu selección**: se guarda en `localStorage` (por dispositivo). Marca ★ en cada charla.
 - **Avisos**: notificación nativa vía Service Worker **mientras la PWA esté abierta**
   (aunque sea en segundo plano) + un **banner con cuenta regresiva** dentro de la app.

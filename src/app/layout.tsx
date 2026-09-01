@@ -6,7 +6,7 @@ import { APP_NAME, APP_SHORT_NAME, withBase } from '@/config';
 export const metadata: Metadata = {
   title: APP_NAME,
   description:
-    'Arma tu agenda personal de Containers Day y recibe un aviso 10 minutos antes de cada charla, con salón, título y speaker.',
+    'Guarda tus eventos, arma tu agenda personal y recibe avisos antes de cada charla.',
   applicationName: APP_SHORT_NAME,
   appleWebApp: {
     capable: true,
@@ -34,6 +34,9 @@ export default function RootLayout({
   return (
     <html lang="es">
       <body>
+        <a className="skip-link" href="#main-content">
+          Saltar al contenido
+        </a>
         {children}
         <ServiceWorkerRegister />
       </body>

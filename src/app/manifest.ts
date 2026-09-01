@@ -8,7 +8,7 @@ export default function manifest(): MetadataRoute.Manifest {
     name: APP_NAME,
     short_name: APP_SHORT_NAME,
     description:
-      'Tu agenda personal de Containers Day con avisos 10 min antes de cada charla.',
+      'Tus eventos y agendas personales con avisos antes de cada charla.',
     start_url: withBase('/'),
     scope: withBase('/'),
     display: 'standalone',

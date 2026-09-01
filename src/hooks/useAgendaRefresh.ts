@@ -13,6 +13,7 @@ import {
   type AgendaRefreshStatus,
 } from '@/lib/agenda-refresh';
 import { loadAgendaCache, saveAgendaCache } from '@/lib/storage';
+import { fetchSessionizeAgenda } from '@/lib/sessionize';
 
 /** Cadencia de polling mientras la pestaña está visible y no hay fallas recientes. */
 const DEFAULT_POLL_MS = 60_000;
@@ -35,6 +36,8 @@ export interface AgendaRefreshState {
 export interface UseAgendaRefreshOptions {
   /** Milisegundos entre sondeos mientras el documento está visible y sin fallas recientes. */
   pollMs?: number;
+  /** Desactiva la red para agendas importadas como una copia local. */
+  enabled?: boolean;
 }
 
 /**
@@ -50,7 +53,7 @@ export interface UseAgendaRefreshOptions {
 export function useAgendaRefresh(
   eventId: string,
   initialAgenda: Agenda,
-  { pollMs = DEFAULT_POLL_MS }: UseAgendaRefreshOptions = {},
+  { pollMs = DEFAULT_POLL_MS, enabled = true }: UseAgendaRefreshOptions = {},
 ): AgendaRefreshState {
   const [agenda, setAgenda] = useState<Agenda>(initialAgenda);
   const [refreshing, setRefreshing] = useState(false);
@@ -199,9 +202,18 @@ export function useAgendaRefresh(
   }, []);
 
   useEffect(() => {
+    if (!enabled) return;
     const controller = createAgendaRefreshController({
       getCurrentAgenda: () => agendaRef.current,
+      fetchAgenda: agendaRef.current.event.provider === 'sessionize'
+        ? (signal) => fetchSessionizeAgenda(
+            agendaRef.current.event.sourceUrl,
+            signal,
+            agendaRef.current.event,
+          )
+        : undefined,
       onUpdate: (fresh) => {
+        if (fresh.event.id !== eventId) return;
         agendaRef.current = fresh;
         saveAgendaCache(eventId, fresh);
         setAgenda(fresh);
@@ -217,7 +229,7 @@ export function useAgendaRefresh(
       // un controller ya disposed una vez que este efecto se limpia.
       handledOutcomePromiseRef.current = null;
     };
-  }, [agendaRef, eventId]);
+  }, [agendaRef, enabled, eventId]);
 
   // Al montar: si en una visita previa guardamos un horario más nuevo que el
   // horneado en build, lo adoptamos antes (o en paralelo) de ir a la red.
@@ -232,8 +244,9 @@ export function useAgendaRefresh(
   // Chequeo de red al montar, sin importar si las notificaciones están
   // habilitadas: la agenda debe mantenerse fresca para todo el mundo.
   useEffect(() => {
+    if (!enabled) return;
     requestRefresh();
-  }, [requestRefresh]);
+  }, [enabled, requestRefresh]);
 
   // Sondeo solo mientras el documento está visible; se detiene al ocultarse y
   // vuelve a chequear (y a sondear) al recuperar visibilidad. También
@@ -242,6 +255,7 @@ export function useAgendaRefresh(
   // resolver, así que acá solo hace falta marcar si el sondeo en segundo
   // plano debe estar activo y disparar los triggers de ciclo de vida.
   useEffect(() => {
+    if (!enabled) return;
     pollingActiveRef.current = !document.hidden;
 
     const onVisibilityChange = () => {
@@ -271,7 +285,7 @@ export function useAgendaRefresh(
       window.removeEventListener('focus', requestRefresh);
       window.removeEventListener('online', requestRefresh);
     };
-  }, [requestRefresh]);
+  }, [enabled, requestRefresh]);
 
   const status = deriveAgendaRefreshStatus({
     refreshing,

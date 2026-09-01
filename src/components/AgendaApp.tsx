@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
+import Link from 'next/link';
 import type { Agenda } from '@/types';
 import type { Filters } from '@/lib/agenda';
 import {
@@ -50,7 +51,9 @@ export default function AgendaApp({
   // pero se mantiene sincronizada con `/agenda.json` en runtime de forma
   // independiente del estado de las notificaciones (ver ese hook).
   const { agenda, status, lastSuccessfulSyncAt, lastAttemptAt } =
-    useAgendaRefresh(eventId, initialAgenda);
+    useAgendaRefresh(eventId, initialAgenda, {
+      enabled: initialAgenda.event.refreshMode === 'live',
+    });
   const { selectedIds, hydrated, isSelected, toggle, clear, seedDefaults } =
     useSelectedSessions(eventId);
   const now = useNow();
@@ -185,17 +188,24 @@ export default function AgendaApp({
     <>
       <header ref={topbarRef} className="topbar">
         <div className="topbar__inner">
+          <Link className="topbar__back" href="/" aria-label="Volver a Mis eventos">
+            <span aria-hidden="true">←</span>
+          </Link>
           <div className="topbar__text">
             <h1 className="topbar__title">
-              Mi Agenda <span className="topbar__event">· Containers Day</span>
+              Mi agenda <span className="topbar__event">· {agenda.event.name}</span>
             </h1>
             <span className="topbar__day">{dayHeading}</span>
-            <FreshnessIndicator
-              status={status}
-              lastSuccessfulSyncAt={lastSuccessfulSyncAt}
-              lastAttemptAt={lastAttemptAt}
-              now={now}
-            />
+            {agenda.event.refreshMode === 'live' ? (
+              <FreshnessIndicator
+                status={status}
+                lastSuccessfulSyncAt={lastSuccessfulSyncAt}
+                lastAttemptAt={lastAttemptAt}
+                now={now}
+              />
+            ) : (
+              <span className="freshness">Copia importada</span>
+            )}
           </div>
           {hydrated && selectedIds.size > 0 && (
             <button type="button" className="topbar__clear" onClick={clear}>
@@ -205,7 +215,7 @@ export default function AgendaApp({
         </div>
       </header>
 
-      <main className="container">
+      <main id="main-content" className="container">
         <DelayBanner />
 
         <InstallPrompt />
@@ -271,7 +281,7 @@ export default function AgendaApp({
           <p>
             Datos de{' '}
             <a href={agenda.event.sourceUrl} target="_blank" rel="noreferrer">
-              containers.day/agenda
+              {agenda.event.name}
             </a>
             . Tu selección se guarda solo en este dispositivo. En iPhone, la app
             instalada y el navegador la guardan por separado.

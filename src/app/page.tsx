@@ -1,8 +1,7 @@
 import agendaData from '@/data/agenda.json';
 import type { Agenda } from '@/types';
-import AgendaApp from '@/components/AgendaApp';
-import { CONTAINERS_DAY_EVENT_ID } from '@/lib/event-id';
+import EventLibrary from '@/components/EventLibrary';
 
 export default function Page() {
-  return <AgendaApp eventId={CONTAINERS_DAY_EVENT_ID} agenda={agendaData as Agenda} />;
+  return <EventLibrary bundledAgenda={agendaData as Agenda} />;
 }

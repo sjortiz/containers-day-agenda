@@ -77,13 +77,10 @@ The home page provides:
 
 ## Adding events without a backend
 
-The initial importer supports only inputs the browser can safely obtain and normalize:
-
-- Known provider URLs with client adapters and CORS-enabled APIs.
-- Direct ICS or supported JSON URLs when CORS permits fetching.
-- ICS/JSON file upload or pasted content when URL fetching is blocked.
-
-An arbitrary event webpage cannot be promised without a server-side ingestion service because browser CORS and provider-specific HTML prevent reliable client-side scraping. Unsupported URLs must fail clearly and offer file/content import rather than being mislabeled as offline.
+The initial importer supports direct Sessionize API v2 endpoints only. Sessionize
+documents these read-only endpoints as usable from client-side applications, so
+the static PWA can import and refresh them without a backend. Arbitrary event
+pages, JSON uploads, ICS, and other providers are out of scope for this phase.
 
 ## Delivery phases
 
@@ -118,18 +115,18 @@ Acceptance criteria:
 ### Phase 3: Initial importer
 
 - Add provider adapter interfaces.
-- Support normalized Talk Track JSON first.
-- Add ICS and selected provider adapters incrementally.
-- Provide URL, file upload, and pasted-content paths.
-- Mark non-refreshable imports as manual snapshots.
+- Support direct Sessionize API v2 `GridSmart`/endpoint URLs first.
+- Normalize Sessionize rooms, sessions, speakers, labels, and service sessions.
+- Refresh every imported event from its own Sessionize endpoint.
 
 Acceptance criteria:
 
 - A valid supported import creates a card and navigable event page.
 - Duplicate imports update or focus the existing event rather than cloning it silently.
-- CORS failures explain the paste/upload fallback.
+- Invalid, unreachable, or incompatible API endpoints fail clearly.
 - Imported strings cannot inject markup.
 
-## Open importer decision
+## Later importer options
 
-The first provider set still needs prioritization. Recommended order: Talk Track JSON, ICS, Sessionize, then Pretalx. Arbitrary webpage ingestion remains a later serverless feature if required.
+ICS, Pretalx, normalized JSON, and arbitrary event-page extraction remain future
+options. They are not implied by the first Sessionize-only release.
