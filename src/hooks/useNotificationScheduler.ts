@@ -5,7 +5,6 @@ import type { Agenda } from '@/types';
 import { NOTIFY_LEAD_MINUTES } from '@/config';
 import { toMs } from '@/lib/time';
 import { reconcileNotified } from '@/lib/agenda';
-import { scheduleJitterMs } from '@/lib/agenda-remote';
 import { showNotification } from '@/lib/notifications';
 import { loadNotified, saveNotified } from '@/lib/storage';
 
@@ -13,11 +12,6 @@ interface Params {
   agenda: Agenda;
   selectedIds: Set<string>;
   enabled: boolean;
-  /**
-   * Se invoca (con jitter) cada vez que se dispara un aviso, para que la app
-   * vuelva a pedir el horario y se actualice si cambió. Opcional.
-   */
-  onScheduleRefresh?: () => void | Promise<void>;
 }
 
 /**
@@ -26,26 +20,21 @@ interface Params {
  * En un sitio estático no hay push del servidor: esto corre mientras la PWA está
  * abierta (aunque sea en segundo plano). Revisa cada 30s y también al recuperar foco;
  * los avisos ya emitidos se guardan en localStorage para no repetirse.
+ *
+ * Este hook solo se ocupa de notificaciones: mantener la agenda al día es
+ * responsabilidad de `useAgendaRefresh`, que corre de forma independiente.
  */
 export function useNotificationScheduler({
   agenda,
   selectedIds,
   enabled,
-  onScheduleRefresh,
 }: Params): void {
   const notifiedRef = useRef<Set<string>>(new Set());
-  // Timer del refresh jittereado y bandera para no encolar más de uno a la vez.
-  const refreshTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const refreshPendingRef = useRef(false);
-  // Guardamos el callback en un ref para no re-crear el intervalo si cambia.
-  const onRefreshRef = useRef(onScheduleRefresh);
-  useEffect(() => {
-    onRefreshRef.current = onScheduleRefresh;
-  }, [onScheduleRefresh]);
 
-  // Al montar (y si cambia la agenda por un rebuild), reconciliamos los avisos
-  // ya emitidos contra los horarios vigentes: si una charla se movió a más tarde,
-  // su aviso debe volver a quedar pendiente para dispararse a la nueva hora.
+  // Al montar (y si cambia la agenda por un rebuild o un refresco en runtime),
+  // reconciliamos los avisos ya emitidos contra los horarios vigentes: si una
+  // charla se movió a más tarde, su aviso debe volver a quedar pendiente para
+  // dispararse a la nueva hora.
   useEffect(() => {
     const stored = loadNotified();
     const reconciled = reconcileNotified(
@@ -63,19 +52,6 @@ export function useNotificationScheduler({
 
     const lead = NOTIFY_LEAD_MINUTES * 60000;
 
-    // Al avisar, re-pedimos el horario (con jitter 1s–2min) para no quedar con
-    // datos viejos si la organización lo movió. Si ya hay uno encolado, no
-    // encolamos otro aunque se disparen varios avisos en el mismo tick.
-    const scheduleRefresh = () => {
-      if (!onRefreshRef.current || refreshPendingRef.current) return;
-      refreshPendingRef.current = true;
-      refreshTimerRef.current = setTimeout(() => {
-        refreshTimerRef.current = null;
-        refreshPendingRef.current = false;
-        void onRefreshRef.current?.();
-      }, scheduleJitterMs());
-    };
-
     const check = () => {
       const now = Date.now();
       for (const s of agenda.sessions) {
@@ -86,7 +62,6 @@ export function useNotificationScheduler({
 
         notifiedRef.current.add(s.id);
         saveNotified(notifiedRef.current);
-        scheduleRefresh();
 
         const mins = Math.max(1, Math.round((start - now) / 60000));
         const speaker = s.speakers.length
@@ -116,11 +91,6 @@ export function useNotificationScheduler({
     return () => {
       clearInterval(id);
       document.removeEventListener('visibilitychange', onVisible);
-      if (refreshTimerRef.current !== null) {
-        clearTimeout(refreshTimerRef.current);
-        refreshTimerRef.current = null;
-      }
-      refreshPendingRef.current = false;
     };
   }, [agenda, selectedIds, enabled]);
 }

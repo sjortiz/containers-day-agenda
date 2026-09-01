@@ -1,11 +1,7 @@
 import { describe, it, afterEach } from 'node:test';
 import assert from 'node:assert/strict';
 import type { Agenda } from '@/types';
-import {
-  isNewerAgenda,
-  scheduleJitterMs,
-  fetchPublishedAgenda,
-} from './agenda-remote';
+import { isNewerAgenda, fetchPublishedAgenda } from './agenda-remote';
 
 function makeAgenda(fetchedAt: string): Agenda {
   return {
@@ -47,42 +43,49 @@ describe('isNewerAgenda', () => {
   });
 });
 
-describe('scheduleJitterMs', () => {
-  it('siempre cae dentro de la ventana 1s–2min', () => {
-    for (let i = 0; i < 200; i++) {
-      const ms = scheduleJitterMs();
-      assert.ok(ms >= 1_000, `jitter ${ms} < 1000`);
-      assert.ok(ms <= 120_000, `jitter ${ms} > 120000`);
-    }
-  });
-});
-
 describe('fetchPublishedAgenda', () => {
   const realFetch = globalThis.fetch;
   afterEach(() => {
     globalThis.fetch = realFetch;
   });
 
-  it('devuelve la agenda cuando la respuesta es válida', async () => {
+  it('devuelve { ok: true, agenda } cuando la respuesta es válida', async () => {
     const agenda = makeAgenda('2026-08-22T09:00:00-04:00');
     globalThis.fetch = (async () => ({ ok: true, json: async () => agenda })) as unknown as typeof fetch;
-    assert.deepEqual(await fetchPublishedAgenda(), agenda);
+    assert.deepEqual(await fetchPublishedAgenda(), { ok: true, agenda });
   });
 
-  it('devuelve null si la respuesta no es ok', async () => {
-    globalThis.fetch = (async () => ({ ok: false, json: async () => ({}) })) as unknown as typeof fetch;
-    assert.equal(await fetchPublishedAgenda(), null);
+  it('devuelve reason "http" (con status) si la respuesta no es ok', async () => {
+    globalThis.fetch = (async () => ({ ok: false, status: 404, json: async () => ({}) })) as unknown as typeof fetch;
+    assert.deepEqual(await fetchPublishedAgenda(), { ok: false, reason: 'http', status: 404 });
   });
 
-  it('devuelve null si el JSON no parece una agenda', async () => {
+  it('devuelve reason "invalid" si el JSON no parece una agenda', async () => {
     globalThis.fetch = (async () => ({ ok: true, json: async () => ({ foo: 'bar' }) })) as unknown as typeof fetch;
-    assert.equal(await fetchPublishedAgenda(), null);
+    const result = await fetchPublishedAgenda();
+    assert.equal(result.ok, false);
+    assert.equal(!result.ok && result.reason, 'invalid');
   });
 
-  it('devuelve null si fetch lanza (offline)', async () => {
+  it('devuelve reason "network" si fetch lanza (offline)', async () => {
+    const boom = new Error('network down');
     globalThis.fetch = (async () => {
-      throw new Error('network down');
+      throw boom;
     }) as unknown as typeof fetch;
-    assert.equal(await fetchPublishedAgenda(), null);
+    const result = await fetchPublishedAgenda();
+    assert.equal(result.ok, false);
+    assert.equal(!result.ok && result.reason, 'network');
+    assert.equal(!result.ok && result.error, boom);
+  });
+
+  it('devuelve reason "aborted" si fetch lanza con la señal ya abortada', async () => {
+    const controller = new AbortController();
+    controller.abort();
+    globalThis.fetch = (async () => {
+      throw new DOMException('The operation was aborted.', 'AbortError');
+    }) as unknown as typeof fetch;
+    const result = await fetchPublishedAgenda(controller.signal);
+    assert.equal(result.ok, false);
+    assert.equal(!result.ok && result.reason, 'aborted');
   });
 });
