@@ -6,6 +6,7 @@ import {
   filterSessions,
   autoAnnouncedIds,
   soleOptionIds,
+  occurrenceKey,
   reconcileNotified,
   selectedSessions,
   nextUpcomingSelected,
@@ -28,8 +29,15 @@ function makeSession(over: Partial<Session> & { id: string }): Session {
 
 function makeAgenda(sessions: Session[]): Agenda {
   return {
-    source: 'https://containers.day/agenda',
-    timezone: 'America/Santo_Domingo',
+    event: {
+      id: 'containers-day',
+      name: 'Containers Day',
+      sourceUrl: 'https://containers.day/agenda',
+      timezone: 'America/Santo_Domingo',
+      provider: 'containers-day',
+      refreshMode: 'live',
+      addedAt: '2026-08-22T08:00:00-04:00',
+    },
     utcOffset: '-04:00',
     fetchedAt: '2026-08-22T08:00:00-04:00',
     rooms: [...new Set(sessions.map((s) => s.room))],
@@ -155,26 +163,92 @@ describe('soleOptionIds', () => {
   });
 });
 
+describe('occurrenceKey', () => {
+  it('combina ID y start con un separador estable', () => {
+    assert.equal(
+      occurrenceKey('s', '2026-08-22T09:00:00-04:00'),
+      's@2026-08-22T09:00:00-04:00',
+    );
+  });
+});
+
 describe('reconcileNotified', () => {
   const lead = 10 * 60000; // 10 min
-  const s = makeSession({ id: 's', start: '2026-08-22T09:00:00-04:00' });
+  const START = '2026-08-22T09:00:00-04:00';
+  const s = makeSession({ id: 's', start: START });
   const agenda = makeAgenda([s]);
-  const start = new Date('2026-08-22T09:00:00-04:00').getTime();
+  const start = new Date(START).getTime();
+  const key = occurrenceKey('s', START);
 
-  it('mantiene el aviso si la ventana (start - lead) ya abrió', () => {
+  it('mantiene la ocurrencia si su ventana (start - lead) ya abrió', () => {
     const now = start - lead + 1000; // ventana ya abierta
-    assert.deepEqual([...reconcileNotified(new Set(['s']), agenda, now, lead)], ['s']);
+    assert.deepEqual([...reconcileNotified(new Set([key]), agenda, now, lead)], [key]);
   });
 
-  it('descarta el aviso si la ventana aún es futura (para re-disparar)', () => {
+  it('descarta la ocurrencia si la ventana aún es futura (para re-disparar)', () => {
     const now = start - lead - 60000; // 1 min antes de que abra la ventana
+    assert.equal(reconcileNotified(new Set([key]), agenda, now, lead).size, 0);
+  });
+
+  it('descarta claves de sesiones que ya no existen', () => {
+    const now = start; // ventana abierta
+    const res = reconcileNotified(
+      new Set([key, occurrenceKey('fantasma', START)]),
+      agenda,
+      now,
+      lead,
+    );
+    assert.deepEqual([...res], [key]);
+  });
+
+  it('migra una entrada legado de solo-ID a la clave con start si su ventana ya abrió', () => {
+    const now = start; // ventana abierta
+    const res = reconcileNotified(new Set(['s']), agenda, now, lead);
+    assert.deepEqual([...res], [key]);
+  });
+
+  it('descarta una entrada legado de solo-ID si su ventana todavía es futura', () => {
+    const now = start - lead - 60000;
     assert.equal(reconcileNotified(new Set(['s']), agenda, now, lead).size, 0);
   });
 
-  it('descarta IDs de sesiones que ya no existen', () => {
-    const now = start; // ventana abierta
-    const res = reconcileNotified(new Set(['s', 'fantasma']), agenda, now, lead);
-    assert.deepEqual([...res], ['s']);
+  it('charla movida más tarde: descarta la ocurrencia vieja para que la nueva quede pendiente', () => {
+    const laterStart = '2026-08-22T11:00:00-04:00';
+    const movedAgenda = makeAgenda([makeSession({ id: 's', start: laterStart })]);
+    const now = start; // "ahora" según la ventana vieja, ya pasada la nueva franja de aviso
+    const res = reconcileNotified(new Set([key]), movedAgenda, now, lead);
+    assert.equal(res.size, 0); // no queda marcada: el hook la re-evaluará contra el nuevo horario
+  });
+
+  it('charla movida más temprano pero aún futura: descarta la ocurrencia vieja para re-evaluar ya', () => {
+    const earlierStart = '2026-08-22T08:00:00-04:00';
+    const movedAgenda = makeAgenda([makeSession({ id: 's', start: earlierStart })]);
+    const now = new Date(earlierStart).getTime() - lead + 1000; // dentro de la nueva ventana
+    const res = reconcileNotified(new Set([key]), movedAgenda, now, lead);
+    assert.equal(res.size, 0);
+  });
+
+  it('charla movida al pasado: no conserva la ocurrencia vieja (sin aviso tardío)', () => {
+    const pastStart = '2026-08-22T07:00:00-04:00';
+    const movedAgenda = makeAgenda([makeSession({ id: 's', start: pastStart })]);
+    const now = start; // muy después de la nueva hora, ya en curso/pasada
+    const res = reconcileNotified(new Set([key]), movedAgenda, now, lead);
+    assert.equal(res.size, 0);
+  });
+
+  it('start sin cambios: la clave se conserva idéntica (sin duplicar)', () => {
+    const now = start;
+    const res = reconcileNotified(new Set([key]), agenda, now, lead);
+    assert.deepEqual([...res], [key]);
+  });
+
+  it('cambio de sala únicamente (mismo start): no es una ocurrencia nueva', () => {
+    const roomChanged = makeAgenda([
+      makeSession({ id: 's', start: START, room: 'Sala Z' }),
+    ]);
+    const now = start;
+    const res = reconcileNotified(new Set([key]), roomChanged, now, lead);
+    assert.deepEqual([...res], [key]);
   });
 });
 

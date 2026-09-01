@@ -1,6 +1,7 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import Link from 'next/link';
 import type { Agenda } from '@/types';
 import type { Filters } from '@/lib/agenda';
 import {
@@ -10,18 +11,19 @@ import {
   nextUpcomingSelected,
   soleOptionIds,
 } from '@/lib/agenda';
-import { fetchPublishedAgenda, isNewerAgenda } from '@/lib/agenda-remote';
-import { loadAgendaCache, saveAgendaCache } from '@/lib/storage';
 import { formatDayHeading, formatTime } from '@/lib/time';
 import {
+  eventNotificationTag,
   getPermission,
   isIOS,
   requestPermission,
   showNotification,
   type NotifPermission,
 } from '@/lib/notifications';
+import { loadNotificationsEnabled, saveNotificationsEnabled, upsertEvent } from '@/lib/storage';
 import { useSelectedSessions } from '@/hooks/useSelectedSessions';
 import { useNow } from '@/hooks/useNow';
+import { useAgendaRefresh } from '@/hooks/useAgendaRefresh';
 import { useNotificationScheduler } from '@/hooks/useNotificationScheduler';
 import SessionCard from './SessionCard';
 import FiltersBar from './Filters';
@@ -29,8 +31,7 @@ import UpcomingBanner from './UpcomingBanner';
 import NotificationToggle from './NotificationToggle';
 import InstallPrompt from './InstallPrompt';
 import DelayBanner from './DelayBanner';
-
-const NOTIF_ENABLED_KEY = 'cd-agenda:notif-enabled:v1';
+import FreshnessIndicator from './FreshnessIndicator';
 
 const EMPTY_FILTERS: Filters = {
   rooms: new Set(),
@@ -40,40 +41,23 @@ const EMPTY_FILTERS: Filters = {
 };
 
 export default function AgendaApp({
+  eventId,
   agenda: initialAgenda,
 }: {
+  eventId: string;
   agenda: Agenda;
 }) {
-  // La agenda vive en estado: arranca con la horneada en build, pero puede
-  // reemplazarse en runtime si descargamos un horario más reciente (ver abajo).
-  const [agenda, setAgenda] = useState<Agenda>(initialAgenda);
+  // La agenda vive en `useAgendaRefresh`: arranca con la horneada en build,
+  // pero se mantiene sincronizada con `/agenda.json` en runtime de forma
+  // independiente del estado de las notificaciones (ver ese hook).
+  const { agenda, status, lastSuccessfulSyncAt, lastAttemptAt } =
+    useAgendaRefresh(eventId, initialAgenda, {
+      enabled: initialAgenda.event.refreshMode === 'live',
+    });
   const { selectedIds, hydrated, isSelected, toggle, clear, seedDefaults } =
-    useSelectedSessions();
+    useSelectedSessions(eventId);
   const now = useNow();
   const [filters, setFilters] = useState<Filters>(EMPTY_FILTERS);
-
-  // Ref con la agenda vigente para comparar dentro de callbacks estables.
-  const agendaRef = useRef(agenda);
-  useEffect(() => {
-    agendaRef.current = agenda;
-  }, [agenda]);
-
-  // Al montar: si en una visita previa guardamos un horario más nuevo que el
-  // del build, lo adoptamos para no arrancar con datos desactualizados.
-  useEffect(() => {
-    const cached = loadAgendaCache();
-    if (cached && isNewerAgenda(cached, initialAgenda)) setAgenda(cached);
-  }, [initialAgenda]);
-
-  // Vuelve a pedir el horario publicado; si cambió, reemplaza el JSON guardado
-  // y actualiza la vista. Lo dispara el scheduler (con jitter) al avisar.
-  const handleScheduleRefresh = useCallback(async () => {
-    const fresh = await fetchPublishedAgenda();
-    if (fresh && isNewerAgenda(fresh, agendaRef.current)) {
-      saveAgendaCache(fresh);
-      setAgenda(fresh);
-    }
-  }, []);
 
   const [permission, setPermission] = useState<NotifPermission>('default');
   const [notifEnabled, setNotifEnabled] = useState(false);
@@ -99,11 +83,16 @@ export default function AgendaApp({
 
   const topbarRef = useRef<HTMLElement>(null);
 
+  // Registra (o actualiza) este evento en el índice, para que Fase 2 (home)
+  // lo encuentre sin depender de que la persona visite `/` primero.
+  useEffect(() => {
+    upsertEvent(agenda.event);
+  }, [agenda.event]);
+
   useEffect(() => {
     setPermission(getPermission());
     setNotifEnabled(
-      window.localStorage.getItem(NOTIF_ENABLED_KEY) === 'true' &&
-        getPermission() === 'granted',
+      loadNotificationsEnabled(eventId) && getPermission() === 'granted',
     );
     // ¿Corremos como PWA instalada (home screen)? En iOS/WebKit el
     // almacenamiento de la app instalada está separado del navegador, así que
@@ -113,7 +102,7 @@ export default function AgendaApp({
       (window.navigator as Navigator & { standalone?: boolean }).standalone ===
         true;
     setIsStandalone(!!standalone);
-  }, []);
+  }, [eventId]);
 
   useEffect(() => {
     const updateTopbarHeight = () => {
@@ -136,16 +125,16 @@ export default function AgendaApp({
   }, []);
 
   useNotificationScheduler({
+    eventId,
     agenda,
     selectedIds: announceIds,
     enabled: notifEnabled && permission === 'granted',
-    onScheduleRefresh: handleScheduleRefresh,
   });
 
   const handleToggleNotif = async () => {
     if (notifEnabled) {
       setNotifEnabled(false);
-      window.localStorage.setItem(NOTIF_ENABLED_KEY, 'false');
+      saveNotificationsEnabled(eventId, false);
       return;
     }
     let perm = getPermission();
@@ -153,11 +142,11 @@ export default function AgendaApp({
     setPermission(perm);
     const on = perm === 'granted';
     setNotifEnabled(on);
-    window.localStorage.setItem(NOTIF_ENABLED_KEY, on ? 'true' : 'false');
+    saveNotificationsEnabled(eventId, on);
     if (on) {
       void showNotification('¡Avisos activados! 🔔', {
         body: 'Te avisaremos 10 min antes de cada charla de tu agenda.',
-        tag: 'welcome',
+        tag: eventNotificationTag(eventId, 'welcome'),
       });
     }
   };
@@ -166,7 +155,7 @@ export default function AgendaApp({
     setTestMsg('Enviando…');
     const ok = await showNotification('Notificación de prueba 🔔', {
       body: 'Así se verá el aviso antes de tu charla.',
-      tag: 'test',
+      tag: eventNotificationTag(eventId, 'test'),
     });
     if (!ok) {
       setTestMsg(
@@ -192,18 +181,31 @@ export default function AgendaApp({
   const upcoming = nextUpcomingSelected(agenda, announceIds, now || undefined);
 
   const dayHeading = agenda.sessions.length
-    ? formatDayHeading(agenda.sessions[0].start, agenda.timezone)
+    ? formatDayHeading(agenda.sessions[0].start, agenda.event.timezone)
     : '';
 
   return (
     <>
       <header ref={topbarRef} className="topbar">
         <div className="topbar__inner">
+          <Link className="topbar__back" href="/" aria-label="Volver a Mis eventos">
+            <span aria-hidden="true">←</span>
+          </Link>
           <div className="topbar__text">
             <h1 className="topbar__title">
-              Mi Agenda <span className="topbar__event">· Containers Day</span>
+              Mi agenda <span className="topbar__event">· {agenda.event.name}</span>
             </h1>
             <span className="topbar__day">{dayHeading}</span>
+            {agenda.event.refreshMode === 'live' ? (
+              <FreshnessIndicator
+                status={status}
+                lastSuccessfulSyncAt={lastSuccessfulSyncAt}
+                lastAttemptAt={lastAttemptAt}
+                now={now}
+              />
+            ) : (
+              <span className="freshness">Copia importada</span>
+            )}
           </div>
           {hydrated && selectedIds.size > 0 && (
             <button type="button" className="topbar__clear" onClick={clear}>
@@ -213,7 +215,7 @@ export default function AgendaApp({
         </div>
       </header>
 
-      <main className="container">
+      <main id="main-content" className="container">
         <DelayBanner />
 
         <InstallPrompt />
@@ -235,7 +237,7 @@ export default function AgendaApp({
           testMsg={testMsg}
         />
 
-        <UpcomingBanner session={upcoming} tz={agenda.timezone} now={now} />
+        <UpcomingBanner session={upcoming} tz={agenda.event.timezone} now={now} />
 
         <FiltersBar
           agenda={agenda}
@@ -256,14 +258,14 @@ export default function AgendaApp({
             {slots.map((slot) => (
               <section key={slot.start} className="slot">
                 <h2 className="slot__time">
-                  {formatTime(slot.start, agenda.timezone)}
+                  {formatTime(slot.start, agenda.event.timezone)}
                 </h2>
                 <div className="slot__cards">
                   {slot.sessions.map((s) => (
                     <SessionCard
                       key={s.id}
                       session={s}
-                      tz={agenda.timezone}
+                      tz={agenda.event.timezone}
                       selected={isSelected(s.id)}
                       onToggle={toggle}
                       now={now}
@@ -278,8 +280,8 @@ export default function AgendaApp({
         <footer className="footer">
           <p>
             Datos de{' '}
-            <a href={agenda.source} target="_blank" rel="noreferrer">
-              containers.day/agenda
+            <a href={agenda.event.sourceUrl} target="_blank" rel="noreferrer">
+              {agenda.event.name}
             </a>
             . Tu selección se guarda solo en este dispositivo. En iPhone, la app
             instalada y el navegador la guardan por separado.

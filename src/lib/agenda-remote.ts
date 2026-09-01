@@ -1,27 +1,16 @@
 /**
  * Descarga en runtime del horario publicado. En un sitio estático la agenda se
  * hornea en build time, pero la organización a veces mueve las charlas durante
- * el evento. Para no quedarnos con datos viejos, al disparar cada aviso volvemos
- * a pedir el mismo JSON que produce el build (servido como asset estático) y, si
- * es más reciente, reemplazamos la copia guardada.
+ * el evento. Para no quedarnos con datos viejos, `useAgendaRefresh` vuelve a
+ * pedir el mismo JSON que produce el build (servido como asset estático) y, si
+ * es más reciente, reemplaza la copia guardada.
  */
 import type { Agenda } from '@/types';
 import { withBase } from '@/config';
+import { looksLikeAgenda } from './agenda-validation';
 
 /** Ruta estable del horario publicado (misma copia que src/data/agenda.json). */
 const AGENDA_PATH = '/agenda.json';
-
-/** Jitter para escalonar las peticiones: de 1s a 2min. */
-const JITTER_MIN_MS = 1_000;
-const JITTER_MAX_MS = 120_000;
-
-/**
- * Retardo aleatorio (1s–2min) para que no todos los clientes pidan el horario
- * en el mismo instante y no se sature el origen.
- */
-export function scheduleJitterMs(): number {
-  return JITTER_MIN_MS + Math.random() * (JITTER_MAX_MS - JITTER_MIN_MS);
-}
 
 /** ¿`next` es una versión más reciente de la agenda que `current`? */
 export function isNewerAgenda(next: Agenda, current: Agenda): boolean {
@@ -32,27 +21,50 @@ export function isNewerAgenda(next: Agenda, current: Agenda): boolean {
   return a > b;
 }
 
-function looksLikeAgenda(data: unknown): data is Agenda {
-  return (
-    typeof data === 'object' &&
-    data !== null &&
-    Array.isArray((data as Agenda).sessions) &&
-    typeof (data as Agenda).timezone === 'string' &&
-    typeof (data as Agenda).fetchedAt === 'string'
-  );
-}
+/** Motivo por el que no se pudo obtener (o confiar en) el horario publicado. */
+export type AgendaFetchFailureReason = 'aborted' | 'network' | 'http' | 'invalid';
+
+export type AgendaFetchResult =
+  | { ok: true; agenda: Agenda }
+  | {
+      ok: false;
+      reason: AgendaFetchFailureReason;
+      /** Código de estado HTTP cuando `reason === 'http'`. */
+      status?: number;
+      /** Error original cuando `reason === 'network'`, útil para depurar. */
+      error?: unknown;
+    };
 
 /**
- * Descarga el horario publicado. Devuelve null ante cualquier error (offline,
- * 404, JSON inválido) para que un fallo nunca rompa los avisos ya programados.
+ * Descarga el horario publicado. A diferencia de una versión que colapsara
+ * todo a `null`, expone el motivo del fallo (red, HTTP, payload inválido o
+ * abortada) para que quien la llama pueda distinguir esos casos: quien invoca
+ * esta función decide cómo reaccionar (reintentos, UI de estado, etc.), esta
+ * función solo reporta con precisión qué pasó.
+ *
+ * Acepta una `AbortSignal` opcional para que el llamador pueda cancelar la
+ * petición (desmontaje del componente, timeout, o una petición que la
+ * supera).
  */
-export async function fetchPublishedAgenda(): Promise<Agenda | null> {
+export async function fetchPublishedAgenda(
+  signal?: AbortSignal,
+): Promise<AgendaFetchResult> {
+  let res: Response;
   try {
-    const res = await fetch(withBase(AGENDA_PATH), { cache: 'no-store' });
-    if (!res.ok) return null;
-    const data: unknown = await res.json();
-    return looksLikeAgenda(data) ? data : null;
-  } catch {
-    return null;
+    res = await fetch(withBase(AGENDA_PATH), { cache: 'no-store', signal });
+  } catch (error) {
+    if (signal?.aborted) return { ok: false, reason: 'aborted' };
+    return { ok: false, reason: 'network', error };
   }
+  if (!res.ok) return { ok: false, reason: 'http', status: res.status };
+
+  let data: unknown;
+  try {
+    data = await res.json();
+  } catch (error) {
+    return { ok: false, reason: 'invalid', error };
+  }
+  return looksLikeAgenda(data)
+    ? { ok: true, agenda: data }
+    : { ok: false, reason: 'invalid' };
 }

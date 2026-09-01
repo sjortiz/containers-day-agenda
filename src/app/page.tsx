@@ -1,7 +1,7 @@
 import agendaData from '@/data/agenda.json';
 import type { Agenda } from '@/types';
-import AgendaApp from '@/components/AgendaApp';
+import EventLibrary from '@/components/EventLibrary';
 
 export default function Page() {
-  return <AgendaApp agenda={agendaData as Agenda} />;
+  return <EventLibrary bundledAgenda={agendaData as Agenda} />;
 }

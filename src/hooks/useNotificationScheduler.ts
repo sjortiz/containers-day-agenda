@@ -1,112 +1,95 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import type { Agenda } from '@/types';
 import { NOTIFY_LEAD_MINUTES } from '@/config';
 import { toMs } from '@/lib/time';
-import { reconcileNotified } from '@/lib/agenda';
-import { scheduleJitterMs } from '@/lib/agenda-remote';
-import { showNotification } from '@/lib/notifications';
+import { occurrenceKey, reconcileNotified } from '@/lib/agenda';
+import { sessionNotificationTag, showNotification } from '@/lib/notifications';
 import { loadNotified, saveNotified } from '@/lib/storage';
 
 interface Params {
+  eventId: string;
   agenda: Agenda;
   selectedIds: Set<string>;
   enabled: boolean;
-  /**
-   * Se invoca (con jitter) cada vez que se dispara un aviso, para que la app
-   * vuelva a pedir el horario y se actualice si cambió. Opcional.
-   */
-  onScheduleRefresh?: () => void | Promise<void>;
 }
+
+const LEAD_MS = NOTIFY_LEAD_MINUTES * 60000;
 
 /**
  * Dispara una notificación NOTIFY_LEAD_MINUTES antes de cada charla seleccionada.
  *
  * En un sitio estático no hay push del servidor: esto corre mientras la PWA está
  * abierta (aunque sea en segundo plano). Revisa cada 30s y también al recuperar foco;
- * los avisos ya emitidos se guardan en localStorage para no repetirse.
+ * los avisos ya emitidos se guardan en localStorage, con scope de evento, como
+ * claves `id@start` (ver `occurrenceKey`), para que un cambio de horario cuente
+ * como una ocurrencia nueva en vez de deduplicarse contra la vieja.
+ *
+ * Este hook solo se ocupa de notificaciones: mantener la agenda al día es
+ * responsabilidad de `useAgendaRefresh`, que corre de forma independiente.
  */
 export function useNotificationScheduler({
+  eventId,
   agenda,
   selectedIds,
   enabled,
-  onScheduleRefresh,
 }: Params): void {
   const notifiedRef = useRef<Set<string>>(new Set());
-  // Timer del refresh jittereado y bandera para no encolar más de uno a la vez.
-  const refreshTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const refreshPendingRef = useRef(false);
-  // Guardamos el callback en un ref para no re-crear el intervalo si cambia.
-  const onRefreshRef = useRef(onScheduleRefresh);
-  useEffect(() => {
-    onRefreshRef.current = onScheduleRefresh;
-  }, [onScheduleRefresh]);
 
-  // Al montar (y si cambia la agenda por un rebuild), reconciliamos los avisos
-  // ya emitidos contra los horarios vigentes: si una charla se movió a más tarde,
-  // su aviso debe volver a quedar pendiente para dispararse a la nueva hora.
-  useEffect(() => {
-    const stored = loadNotified();
-    const reconciled = reconcileNotified(
-      stored,
-      agenda,
-      Date.now(),
-      NOTIFY_LEAD_MINUTES * 60000,
-    );
+  // Reconcilia los avisos ya emitidos contra los horarios vigentes: si una
+  // charla se movió, su ocurrencia vieja se descarta y la nueva queda
+  // pendiente para evaluarse a la hora correcta. También migra entradas
+  // legado de solo-ID al formato `id@start`.
+  const reconcile = useCallback(() => {
+    const stored = loadNotified(eventId);
+    const reconciled = reconcileNotified(stored, agenda, Date.now(), LEAD_MS);
     notifiedRef.current = reconciled;
-    if (reconciled.size !== stored.size) saveNotified(reconciled);
-  }, [agenda]);
+    // Persistimos siempre: una migración de `id` a `id@start` puede cambiar el
+    // contenido sin cambiar el tamaño del set.
+    saveNotified(eventId, reconciled);
+  }, [eventId, agenda]);
+
+  const check = useCallback(() => {
+    if (!enabled) return;
+    const now = Date.now();
+    for (const s of agenda.sessions) {
+      if (!selectedIds.has(s.id)) continue;
+      const start = toMs(s.start);
+      const inWindow = now >= start - LEAD_MS && now < start;
+      const key = occurrenceKey(s.id, s.start);
+      if (!inWindow || notifiedRef.current.has(key)) continue;
+
+      notifiedRef.current.add(key);
+      saveNotified(eventId, notifiedRef.current);
+
+      const mins = Math.max(1, Math.round((start - now) / 60000));
+      const speaker = s.speakers.length ? ` · ${s.speakers.join(', ')}` : '';
+      // Breaks/ceremonias no son "charlas": título genérico.
+      const heading = s.isService
+        ? `${s.title} en ${mins} min`
+        : `Tu charla empieza en ${mins} min`;
+      const body = s.isService
+        ? `📍 ${s.room}`
+        : `${s.title}\n📍 ${s.room}${speaker}`;
+      void showNotification(heading, {
+        body,
+        tag: sessionNotificationTag(eventId, s.id),
+      });
+    }
+  }, [eventId, agenda, selectedIds, enabled]);
+
+  // Un agenda prop más nuevo (rebuild o refresco en runtime) debe reevaluarse
+  // de inmediato en vez de esperar al próximo tick del intervalo: reconciliar
+  // primero (para descartar ocurrencias viejas tras un cambio de horario) y
+  // luego chequear con el estado ya al día.
+  useEffect(() => {
+    reconcile();
+    check();
+  }, [reconcile, check]);
 
   useEffect(() => {
     if (!enabled) return;
-
-    const lead = NOTIFY_LEAD_MINUTES * 60000;
-
-    // Al avisar, re-pedimos el horario (con jitter 1s–2min) para no quedar con
-    // datos viejos si la organización lo movió. Si ya hay uno encolado, no
-    // encolamos otro aunque se disparen varios avisos en el mismo tick.
-    const scheduleRefresh = () => {
-      if (!onRefreshRef.current || refreshPendingRef.current) return;
-      refreshPendingRef.current = true;
-      refreshTimerRef.current = setTimeout(() => {
-        refreshTimerRef.current = null;
-        refreshPendingRef.current = false;
-        void onRefreshRef.current?.();
-      }, scheduleJitterMs());
-    };
-
-    const check = () => {
-      const now = Date.now();
-      for (const s of agenda.sessions) {
-        if (!selectedIds.has(s.id)) continue;
-        const start = toMs(s.start);
-        const inWindow = now >= start - lead && now < start;
-        if (!inWindow || notifiedRef.current.has(s.id)) continue;
-
-        notifiedRef.current.add(s.id);
-        saveNotified(notifiedRef.current);
-        scheduleRefresh();
-
-        const mins = Math.max(1, Math.round((start - now) / 60000));
-        const speaker = s.speakers.length
-          ? ` · ${s.speakers.join(', ')}`
-          : '';
-        // Breaks/ceremonias no son "charlas": título genérico.
-        const heading = s.isService
-          ? `${s.title} en ${mins} min`
-          : `Tu charla empieza en ${mins} min`;
-        const body = s.isService
-          ? `📍 ${s.room}`
-          : `${s.title}\n📍 ${s.room}${speaker}`;
-        void showNotification(heading, {
-          body,
-          tag: `session-${s.id}`,
-        });
-      }
-    };
-
-    check();
     const id = setInterval(check, 30000);
     const onVisible = () => {
       if (!document.hidden) check();
@@ -116,11 +99,6 @@ export function useNotificationScheduler({
     return () => {
       clearInterval(id);
       document.removeEventListener('visibilitychange', onVisible);
-      if (refreshTimerRef.current !== null) {
-        clearTimeout(refreshTimerRef.current);
-        refreshTimerRef.current = null;
-      }
-      refreshPendingRef.current = false;
     };
-  }, [agenda, selectedIds, enabled]);
+  }, [enabled, check]);
 }

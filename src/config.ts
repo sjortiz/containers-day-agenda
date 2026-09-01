@@ -22,8 +22,8 @@ export const NOTIFY_LEAD_MINUTES = 10;
  */
 export const EVENT_DELAY_MINUTES = 0;
 
-export const APP_NAME = 'Mi Agenda · Containers Day';
-export const APP_SHORT_NAME = 'CD Agenda';
+export const APP_NAME = 'Talk Track · Mis eventos';
+export const APP_SHORT_NAME = 'Talk Track';
 
 /** Prefija una ruta absoluta del sitio con el basePath (assets, sw, iconos). */
 export function withBase(path: string): string {

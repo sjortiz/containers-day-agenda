@@ -19,6 +19,13 @@ const AGENDA_URL = 'https://containers.day/agenda/';
 const CONFERENCE_TZ = 'America/Santo_Domingo';
 const CONFERENCE_UTC_OFFSET = '-04:00';
 
+// Debe coincidir con CONTAINERS_DAY_EVENT_ID en src/lib/event-id.ts (evento
+// fijo sembrado por la migración inicial, ver docs/specs/multi-event-home.md).
+const EVENT_ID = 'containers-day';
+const EVENT_NAME = 'Containers Day';
+const EVENT_PROVIDER = 'containers-day';
+const EVENT_REFRESH_MODE = 'live';
+
 const __dirname = dirname(fileURLToPath(import.meta.url));
 // La app importa este JSON en build time...
 const OUT_FILE = join(__dirname, '..', 'src', 'data', 'agenda.json');
@@ -105,11 +112,21 @@ async function main() {
     a.localeCompare(b),
   );
 
+  const fetchedAt = new Date().toISOString();
   const payload = {
-    source: AGENDA_URL,
-    timezone: CONFERENCE_TZ,
+    event: {
+      id: EVENT_ID,
+      name: EVENT_NAME,
+      sourceUrl: AGENDA_URL,
+      timezone: CONFERENCE_TZ,
+      provider: EVENT_PROVIDER,
+      refreshMode: EVENT_REFRESH_MODE,
+      // Este evento fijo no tiene un momento real de "alta": usamos el mismo
+      // fetchedAt de esta corrida, que es determinista y siempre disponible.
+      addedAt: fetchedAt,
+    },
     utcOffset: CONFERENCE_UTC_OFFSET,
-    fetchedAt: new Date().toISOString(),
+    fetchedAt,
     rooms,
     labels: allLabels,
     sessions,

@@ -1,7 +1,7 @@
-# Mi Agenda · Containers Day
+# Talk Track
 
-PWA que toma la agenda pública de [containers.day/agenda](https://containers.day/agenda/),
-te deja **armar tu propia agenda** (guardada en el dispositivo, sin cuenta ni backend) y
+PWA que reúne agendas de eventos —incluyendo Containers Day y APIs públicas de
+Sessionize—, te deja **armar tu propia agenda** (guardada en el dispositivo, sin cuenta ni backend) y
 te **avisa 10 minutos antes** de cada charla que elegiste, mostrando **salón, título y speaker**.
 
 Hecha con **Next.js** (export estático) para publicarse en **GitHub Pages**.
@@ -10,6 +10,8 @@ Hecha con **Next.js** (export estático) para publicarse en **GitHub Pages**.
 
 - **Datos**: `scripts/fetch-agenda.mjs` descarga y parsea la agenda a `src/data/agenda.json`
   en build time. Los horarios se guardan con el offset del evento (`America/Santo_Domingo`, UTC-4).
+- **Más eventos**: la pantalla inicial acepta endpoints API v2 de Sessionize y
+  guarda cada agenda por separado en el dispositivo.
 - **Tu selección**: se guarda en `localStorage` (por dispositivo). Marca ★ en cada charla.
 - **Avisos**: notificación nativa vía Service Worker **mientras la PWA esté abierta**
   (aunque sea en segundo plano) + un **banner con cuenta regresiva** dentro de la app.
@@ -22,6 +24,30 @@ npm install
 npm run fetch-agenda   # regenera src/data/agenda.json (opcional; ya viene commiteado)
 npm run make-icons     # regenera los iconos PWA (opcional)
 npm run dev            # http://localhost:3000   (sin basePath en dev)
+```
+
+## Skills de Claude Code
+
+Para trabajar en este proyecto con Claude Code usamos las siguientes skills de
+[vercel-labs/agent-skills](https://github.com/vercel-labs/agent-skills):
+
+- `vercel-react-best-practices`
+- `vercel-composition-patterns`
+- `vercel-react-view-transitions`
+- `web-design-guidelines`
+- `writing-guidelines`
+
+No instalamos ni usamos las skills de despliegue, CLI u optimización de Vercel,
+porque este proyecto se publica como export estático en GitHub Pages. Tampoco
+incluimos la skill de React Native porque la aplicación es una PWA web.
+
+Instalación global para Claude Code:
+
+```bash
+npx skills add vercel-labs/agent-skills --global --agent claude-code \
+  --skill vercel-composition-patterns vercel-react-best-practices \
+  vercel-react-view-transitions web-design-guidelines writing-guidelines \
+  --yes --copy
 ```
 
 ## Build local

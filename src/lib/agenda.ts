@@ -81,14 +81,34 @@ export function soleOptionIds(agenda: Agenda): Set<string> {
 }
 
 /**
- * Reconcilia el set de "ya avisado" contra la agenda vigente. Cuando la
- * organización mueve los horarios, un ID que ya disparó su aviso al horario
- * viejo debe volver a quedar pendiente si su NUEVA ventana de aviso todavía no
- * llegó, para que el recordatorio se dispare a la hora correcta. También
- * descarta IDs de sesiones que ya no existen.
+ * Identidad estable de una "ocurrencia" de aviso: el ID de sesión solo no
+ * alcanza porque el mismo ID puede recibir un horario distinto. Codificar el
+ * `start` vigente en la clave hace que un cambio de horario cuente como una
+ * ocurrencia nueva, elegible para un aviso propio.
+ */
+export function occurrenceKey(id: string, start: string): string {
+  return `${id}@${start}`;
+}
+
+/** Separa una clave `id@start` en sus partes; una entrada legado (sin `@`) devuelve `start: null`. */
+function parseOccurrenceKey(key: string): { id: string; start: string | null } {
+  const at = key.indexOf('@');
+  if (at === -1) return { id: key, start: null };
+  return { id: key.slice(0, at), start: key.slice(at + 1) };
+}
+
+/**
+ * Reconcilia el set de "ya avisado" contra la agenda vigente. Acepta tanto
+ * claves nuevas (`id@start`) como entradas legado de solo-ID (formato previo
+ * a esta migración) y las trata así:
  *
- * Mantiene marcados solo los avisos cuya ventana ya abrió (now >= start - lead),
- * así no re-notificamos charlas en curso o ya pasadas.
+ * - Sesión eliminada: se descarta el flag huérfano.
+ * - Clave con `start` que ya no coincide con el vigente (la organización movió
+ *   el horario): se descarta sin más, para que la ocurrencia nueva quede
+ *   pendiente y el aviso se re-evalúe contra la hora correcta.
+ * - Entrada legado o clave con `start` vigente: se conserva (migrada a la
+ *   clave con `start`) solo si su ventana ya abrió (now >= start - lead); si
+ *   todavía es futura, se descarta para que el aviso se dispare a tiempo.
  */
 export function reconcileNotified(
   notified: Set<string>,
@@ -98,10 +118,12 @@ export function reconcileNotified(
 ): Set<string> {
   const byId = new Map(agenda.sessions.map((s) => [s.id, s] as const));
   const next = new Set<string>();
-  for (const id of notified) {
+  for (const key of notified) {
+    const { id, start } = parseOccurrenceKey(key);
     const s = byId.get(id);
     if (!s) continue; // sesión eliminada/renombrada: limpiamos el flag huérfano
-    if (now >= toMs(s.start) - leadMs) next.add(id); // ventana ya abierta: se queda
+    if (start !== null && start !== s.start) continue; // ocurrencia vieja: el horario cambió
+    if (now >= toMs(s.start) - leadMs) next.add(occurrenceKey(s.id, s.start)); // ventana ya abierta: se queda (migrada)
     // ventana aún futura -> lo dejamos fuera para que el aviso se re-dispare
   }
   return next;
