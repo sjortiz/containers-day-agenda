@@ -5,8 +5,15 @@ import { isNewerAgenda, fetchPublishedAgenda } from './agenda-remote';
 
 function makeAgenda(fetchedAt: string): Agenda {
   return {
-    source: 'https://containers.day/agenda',
-    timezone: 'America/Santo_Domingo',
+    event: {
+      id: 'containers-day',
+      name: 'Containers Day',
+      sourceUrl: 'https://containers.day/agenda',
+      timezone: 'America/Santo_Domingo',
+      provider: 'containers-day',
+      refreshMode: 'live',
+      addedAt: fetchedAt,
+    },
     utcOffset: '-04:00',
     fetchedAt,
     rooms: [],

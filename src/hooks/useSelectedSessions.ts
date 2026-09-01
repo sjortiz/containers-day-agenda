@@ -6,6 +6,7 @@ import {
   loadSoleSeeded,
   saveSelected,
   saveSoleSeeded,
+  selectedStorageKey,
 } from '@/lib/storage';
 
 export interface SelectedApi {
@@ -18,7 +19,7 @@ export interface SelectedApi {
   seedDefaults: (ids: Set<string>) => void;
 }
 
-export function useSelectedSessions(): SelectedApi {
+export function useSelectedSessions(eventId: string): SelectedApi {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [hydrated, setHydrated] = useState(false);
   // IDs ya sembrados como marcados por defecto; en ref para que `seedDefaults`
@@ -27,24 +28,28 @@ export function useSelectedSessions(): SelectedApi {
 
   // Cargamos desde localStorage solo en cliente (evita mismatch de hidratación).
   useEffect(() => {
-    setSelectedIds(loadSelected());
-    seededRef.current = loadSoleSeeded();
+    setSelectedIds(loadSelected(eventId));
+    seededRef.current = loadSoleSeeded(eventId);
     setHydrated(true);
-  }, []);
+  }, [eventId]);
 
-  // Sincroniza cambios entre pestañas.
+  // Sincroniza cambios entre pestañas (solo para el evento vigente).
   useEffect(() => {
+    const key = selectedStorageKey(eventId);
     const onStorage = (e: StorageEvent) => {
-      if (e.key === 'cd-agenda:selected:v1') setSelectedIds(loadSelected());
+      if (key !== null && e.key === key) setSelectedIds(loadSelected(eventId));
     };
     window.addEventListener('storage', onStorage);
     return () => window.removeEventListener('storage', onStorage);
-  }, []);
+  }, [eventId]);
 
-  const persist = useCallback((next: Set<string>) => {
-    setSelectedIds(next);
-    saveSelected(next);
-  }, []);
+  const persist = useCallback(
+    (next: Set<string>) => {
+      setSelectedIds(next);
+      saveSelected(eventId, next);
+    },
+    [eventId],
+  );
 
   const toggle = useCallback(
     (id: string) => {
@@ -52,31 +57,34 @@ export function useSelectedSessions(): SelectedApi {
         const next = new Set(prev);
         if (next.has(id)) next.delete(id);
         else next.add(id);
-        saveSelected(next);
+        saveSelected(eventId, next);
         return next;
       });
     },
-    [],
+    [eventId],
   );
 
   const clear = useCallback(() => persist(new Set()), [persist]);
 
-  const seedDefaults = useCallback((ids: Set<string>) => {
-    // Solo sembramos los que nunca sembramos antes: así, si la persona desmarca
-    // una charla de única opción, no se la volvemos a marcar en cada carga.
-    const fresh = [...ids].filter((id) => !seededRef.current.has(id));
-    if (fresh.length === 0) return;
-    const nextSeeded = new Set(seededRef.current);
-    fresh.forEach((id) => nextSeeded.add(id));
-    seededRef.current = nextSeeded;
-    saveSoleSeeded(nextSeeded);
-    setSelectedIds((prev) => {
-      const next = new Set(prev);
-      fresh.forEach((id) => next.add(id));
-      saveSelected(next);
-      return next;
-    });
-  }, []);
+  const seedDefaults = useCallback(
+    (ids: Set<string>) => {
+      // Solo sembramos los que nunca sembramos antes: así, si la persona desmarca
+      // una charla de única opción, no se la volvemos a marcar en cada carga.
+      const fresh = [...ids].filter((id) => !seededRef.current.has(id));
+      if (fresh.length === 0) return;
+      const nextSeeded = new Set(seededRef.current);
+      fresh.forEach((id) => nextSeeded.add(id));
+      seededRef.current = nextSeeded;
+      saveSoleSeeded(eventId, nextSeeded);
+      setSelectedIds((prev) => {
+        const next = new Set(prev);
+        fresh.forEach((id) => next.add(id));
+        saveSelected(eventId, next);
+        return next;
+      });
+    },
+    [eventId],
+  );
 
   const isSelected = useCallback(
     (id: string) => selectedIds.has(id),

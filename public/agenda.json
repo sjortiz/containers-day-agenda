@@ -1,6 +1,13 @@
 {
-  "source": "https://containers.day/agenda/",
-  "timezone": "America/Santo_Domingo",
+  "event": {
+    "id": "containers-day",
+    "name": "Containers Day",
+    "sourceUrl": "https://containers.day/agenda/",
+    "timezone": "America/Santo_Domingo",
+    "provider": "containers-day",
+    "refreshMode": "live",
+    "addedAt": "2026-08-22T14:09:20.370Z"
+  },
   "utcOffset": "-04:00",
   "fetchedAt": "2026-08-22T14:09:20.370Z",
   "rooms": [

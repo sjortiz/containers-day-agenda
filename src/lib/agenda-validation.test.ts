@@ -3,8 +3,8 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
-import type { Agenda, Session } from '@/types';
-import { looksLikeAgenda } from './agenda-validation';
+import type { Agenda, EventMeta, Session } from '@/types';
+import { looksLikeAgenda, looksLikeEventMeta } from './agenda-validation';
 
 function makeSession(overrides: Partial<Session> = {}): Session {
   return {
@@ -20,10 +20,22 @@ function makeSession(overrides: Partial<Session> = {}): Session {
   };
 }
 
+function makeEventMeta(overrides: Partial<EventMeta> = {}): EventMeta {
+  return {
+    id: 'containers-day',
+    name: 'Containers Day',
+    sourceUrl: 'https://containers.day/agenda/',
+    timezone: 'America/Santo_Domingo',
+    provider: 'containers-day',
+    refreshMode: 'live',
+    addedAt: '2026-08-22T14:09:20.370Z',
+    ...overrides,
+  };
+}
+
 function makeAgenda(overrides: Partial<Agenda> = {}): Agenda {
   return {
-    source: 'https://containers.day/agenda/',
-    timezone: 'America/Santo_Domingo',
+    event: makeEventMeta(),
     utcOffset: '-04:00',
     fetchedAt: '2026-08-22T14:09:20.370Z',
     rooms: ['Octagonal 1', 'Salón Principal'],
@@ -98,7 +110,14 @@ describe('looksLikeAgenda: forma general inválida', () => {
 });
 
 describe('looksLikeAgenda: campos de nivel Agenda', () => {
-  for (const field of ['source', 'timezone', 'utcOffset', 'fetchedAt'] as const) {
+  it('rechaza event ausente o que no parece EventMeta', () => {
+    const agenda = makeAgenda() as unknown as Record<string, unknown>;
+    delete agenda.event;
+    assert.equal(looksLikeAgenda(agenda), false);
+    assert.equal(looksLikeAgenda(makeAgenda({ event: { foo: 'bar' } as unknown as EventMeta })), false);
+  });
+
+  for (const field of ['utcOffset', 'fetchedAt'] as const) {
     it(`rechaza ${field} ausente`, () => {
       const agenda = makeAgenda() as unknown as Record<string, unknown>;
       delete agenda[field];
@@ -228,5 +247,63 @@ describe('looksLikeAgenda: campos de Session', () => {
 
   it('rechaza una sesión que no es un objeto', () => {
     assert.equal(looksLikeAgenda(makeAgenda({ sessions: ['nope' as unknown as Session] })), false);
+  });
+});
+
+describe('looksLikeEventMeta', () => {
+  it('acepta un EventMeta válido', () => {
+    assert.equal(looksLikeEventMeta(makeEventMeta()), true);
+  });
+
+  it('rechaza null, arrays y primitivos', () => {
+    assert.equal(looksLikeEventMeta(null), false);
+    assert.equal(looksLikeEventMeta(undefined), false);
+    assert.equal(looksLikeEventMeta('evt'), false);
+    assert.equal(looksLikeEventMeta([]), false);
+  });
+
+  it('rechaza id inválido como event ID (mayúsculas, espacios, `:`, `/`)', () => {
+    for (const id of ['Containers-Day', 'containers day', 'a:b', 'a/b', '', '-leading', 'trailing-']) {
+      assert.equal(looksLikeEventMeta(makeEventMeta({ id })), false, `id=${JSON.stringify(id)}`);
+    }
+  });
+
+  for (const field of ['name', 'sourceUrl', 'timezone', 'addedAt'] as const) {
+    it(`rechaza ${field} ausente o vacío`, () => {
+      const meta = makeEventMeta() as unknown as Record<string, unknown>;
+      delete meta[field];
+      assert.equal(looksLikeEventMeta(meta), false);
+      assert.equal(looksLikeEventMeta(makeEventMeta({ [field]: '' })), false);
+    });
+  }
+
+  it('rechaza addedAt no parseable como fecha', () => {
+    assert.equal(looksLikeEventMeta(makeEventMeta({ addedAt: 'no-es-fecha' })), false);
+  });
+
+  it('rechaza provider fuera del enum soportado', () => {
+    assert.equal(
+      looksLikeEventMeta(makeEventMeta({ provider: 'eventbrite' as unknown as EventMeta['provider'] })),
+      false,
+    );
+  });
+
+  it('acepta cada provider soportado', () => {
+    for (const provider of ['containers-day', 'sessionize', 'pretalx', 'ics', 'json'] as const) {
+      assert.equal(looksLikeEventMeta(makeEventMeta({ provider })), true);
+    }
+  });
+
+  it('rechaza refreshMode fuera del enum soportado', () => {
+    assert.equal(
+      looksLikeEventMeta(makeEventMeta({ refreshMode: 'auto' as unknown as EventMeta['refreshMode'] })),
+      false,
+    );
+  });
+
+  it('acepta cada refreshMode soportado', () => {
+    for (const refreshMode of ['live', 'manual'] as const) {
+      assert.equal(looksLikeEventMeta(makeEventMeta({ refreshMode })), true);
+    }
   });
 });

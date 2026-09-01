@@ -5,10 +5,11 @@ import type { Agenda } from '@/types';
 import { NOTIFY_LEAD_MINUTES } from '@/config';
 import { toMs } from '@/lib/time';
 import { occurrenceKey, reconcileNotified } from '@/lib/agenda';
-import { showNotification } from '@/lib/notifications';
+import { sessionNotificationTag, showNotification } from '@/lib/notifications';
 import { loadNotified, saveNotified } from '@/lib/storage';
 
 interface Params {
+  eventId: string;
   agenda: Agenda;
   selectedIds: Set<string>;
   enabled: boolean;
@@ -21,14 +22,15 @@ const LEAD_MS = NOTIFY_LEAD_MINUTES * 60000;
  *
  * En un sitio estático no hay push del servidor: esto corre mientras la PWA está
  * abierta (aunque sea en segundo plano). Revisa cada 30s y también al recuperar foco;
- * los avisos ya emitidos se guardan en localStorage como claves `id@start`
- * (ver `occurrenceKey`), para que un cambio de horario cuente como una
- * ocurrencia nueva en vez de deduplicarse contra la vieja.
+ * los avisos ya emitidos se guardan en localStorage, con scope de evento, como
+ * claves `id@start` (ver `occurrenceKey`), para que un cambio de horario cuente
+ * como una ocurrencia nueva en vez de deduplicarse contra la vieja.
  *
  * Este hook solo se ocupa de notificaciones: mantener la agenda al día es
  * responsabilidad de `useAgendaRefresh`, que corre de forma independiente.
  */
 export function useNotificationScheduler({
+  eventId,
   agenda,
   selectedIds,
   enabled,
@@ -40,13 +42,13 @@ export function useNotificationScheduler({
   // pendiente para evaluarse a la hora correcta. También migra entradas
   // legado de solo-ID al formato `id@start`.
   const reconcile = useCallback(() => {
-    const stored = loadNotified();
+    const stored = loadNotified(eventId);
     const reconciled = reconcileNotified(stored, agenda, Date.now(), LEAD_MS);
     notifiedRef.current = reconciled;
     // Persistimos siempre: una migración de `id` a `id@start` puede cambiar el
     // contenido sin cambiar el tamaño del set.
-    saveNotified(reconciled);
-  }, [agenda]);
+    saveNotified(eventId, reconciled);
+  }, [eventId, agenda]);
 
   const check = useCallback(() => {
     if (!enabled) return;
@@ -59,7 +61,7 @@ export function useNotificationScheduler({
       if (!inWindow || notifiedRef.current.has(key)) continue;
 
       notifiedRef.current.add(key);
-      saveNotified(notifiedRef.current);
+      saveNotified(eventId, notifiedRef.current);
 
       const mins = Math.max(1, Math.round((start - now) / 60000));
       const speaker = s.speakers.length ? ` · ${s.speakers.join(', ')}` : '';
@@ -72,10 +74,10 @@ export function useNotificationScheduler({
         : `${s.title}\n📍 ${s.room}${speaker}`;
       void showNotification(heading, {
         body,
-        tag: `session-${s.id}`,
+        tag: sessionNotificationTag(eventId, s.id),
       });
     }
-  }, [agenda, selectedIds, enabled]);
+  }, [eventId, agenda, selectedIds, enabled]);
 
   // Un agenda prop más nuevo (rebuild o refresco en runtime) debe reevaluarse
   // de inmediato en vez de esperar al próximo tick del intervalo: reconciliar

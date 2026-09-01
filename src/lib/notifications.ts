@@ -36,6 +36,21 @@ interface NotifyOptions {
 }
 
 /**
+ * Tag de notificación con scope de evento: dos eventos (p. ej. dos
+ * proveedores distintos) pueden reusar el mismo ID de sesión, y un `tag`
+ * compartido haría que el navegador reemplace el aviso de uno con el del
+ * otro. Prefijar con el event ID evita esa colisión.
+ */
+export function eventNotificationTag(eventId: string, suffix: string): string {
+  return `${eventId}:${suffix}`;
+}
+
+/** Tag de notificación para una sesión concreta de un evento. */
+export function sessionNotificationTag(eventId: string, sessionId: string): string {
+  return eventNotificationTag(eventId, `session-${sessionId}`);
+}
+
+/**
  * Devuelve un registration del service worker usable para mostrar notificaciones.
  * Primero intenta uno ya activo (camino rápido: en una PWA instalada suele estarlo
  * al abrir), y si no, espera a `navigator.serviceWorker.ready` con timeout para no

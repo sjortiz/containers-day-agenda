@@ -48,6 +48,7 @@ export interface UseAgendaRefreshOptions {
  * cachea el resultado en localStorage.
  */
 export function useAgendaRefresh(
+  eventId: string,
   initialAgenda: Agenda,
   { pollMs = DEFAULT_POLL_MS }: UseAgendaRefreshOptions = {},
 ): AgendaRefreshState {
@@ -202,7 +203,7 @@ export function useAgendaRefresh(
       getCurrentAgenda: () => agendaRef.current,
       onUpdate: (fresh) => {
         agendaRef.current = fresh;
-        saveAgendaCache(fresh);
+        saveAgendaCache(eventId, fresh);
         setAgenda(fresh);
       },
     });
@@ -216,17 +217,17 @@ export function useAgendaRefresh(
       // un controller ya disposed una vez que este efecto se limpia.
       handledOutcomePromiseRef.current = null;
     };
-  }, [agendaRef]);
+  }, [agendaRef, eventId]);
 
   // Al montar: si en una visita previa guardamos un horario más nuevo que el
   // horneado en build, lo adoptamos antes (o en paralelo) de ir a la red.
   useEffect(() => {
-    const cached = loadAgendaCache();
+    const cached = loadAgendaCache(eventId);
     if (cached && isNewerAgenda(cached, agendaRef.current)) {
       agendaRef.current = cached;
       setAgenda(cached);
     }
-  }, [agendaRef]);
+  }, [agendaRef, eventId]);
 
   // Chequeo de red al montar, sin importar si las notificaciones están
   // habilitadas: la agenda debe mantenerse fresca para todo el mundo.

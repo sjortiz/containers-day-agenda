@@ -13,9 +13,24 @@ export interface Session {
   end: string | null;
 }
 
-export interface Agenda {
-  source: string;
+/**
+ * Identidad de un evento. Ver docs/specs/multi-event-home.md: es la unidad de
+ * scope para toda la persistencia (`talk-track:<event-id>:...`) y, en Fase 2,
+ * de la ruta `/event/?id=<event-id>`. `id` debe validar con
+ * `isValidEventId` (ver lib/event-id.ts).
+ */
+export interface EventMeta {
+  id: string;
+  name: string;
+  sourceUrl: string;
   timezone: string;
+  provider: 'containers-day' | 'sessionize' | 'pretalx' | 'ics' | 'json';
+  refreshMode: 'live' | 'manual';
+  addedAt: string;
+}
+
+export interface Agenda {
+  event: EventMeta;
   utcOffset: string;
   fetchedAt: string;
   rooms: string[];

@@ -29,8 +29,15 @@ function makeSession(over: Partial<Session> & { id: string }): Session {
 
 function makeAgenda(sessions: Session[]): Agenda {
   return {
-    source: 'https://containers.day/agenda',
-    timezone: 'America/Santo_Domingo',
+    event: {
+      id: 'containers-day',
+      name: 'Containers Day',
+      sourceUrl: 'https://containers.day/agenda',
+      timezone: 'America/Santo_Domingo',
+      provider: 'containers-day',
+      refreshMode: 'live',
+      addedAt: '2026-08-22T08:00:00-04:00',
+    },
     utcOffset: '-04:00',
     fetchedAt: '2026-08-22T08:00:00-04:00',
     rooms: [...new Set(sessions.map((s) => s.room))],
