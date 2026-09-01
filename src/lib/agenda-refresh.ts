@@ -52,6 +52,53 @@ export interface AgendaRefreshController {
 
 const DEFAULT_TIMEOUT_MS = 10_000;
 
+/** Delays (ms) de reintento para el polling en segundo plano tras fallas
+ * consecutivas, indexados por cantidad de fallas (1ª falla -> 30s, 2ª -> 60s,
+ * ...), con tope en la última entrada. */
+const RETRY_DELAYS_MS = [30_000, 60_000, 120_000, 300_000];
+
+/**
+ * Delay hasta el próximo sondeo automático. Sin fallas recientes usa la
+ * cadencia base configurada; cada falla consecutiva avanza en
+ * `RETRY_DELAYS_MS`, topando en su última (y mayor) entrada. Función pura
+ * -sin timers ni estado- para poder probar la secuencia de backoff de forma
+ * determinista.
+ */
+export function computeNextPollDelayMs(
+  consecutiveFailures: number,
+  basePollMs: number,
+): number {
+  if (consecutiveFailures <= 0) return basePollMs;
+  const index = Math.min(consecutiveFailures, RETRY_DELAYS_MS.length) - 1;
+  return RETRY_DELAYS_MS[index];
+}
+
+export type AgendaRefreshStatus =
+  | 'idle'
+  | 'refreshing'
+  | 'fresh'
+  | 'offline'
+  | 'error';
+
+/**
+ * Deriva el estado agregado de frescura (para la UI) a partir del
+ * bookkeeping de refrescos. Función pura para poder verificar las
+ * transiciones -por ejemplo, que un abort no cuenta como falla- sin montar
+ * componentes de React.
+ */
+export function deriveAgendaRefreshStatus(state: {
+  refreshing: boolean;
+  consecutiveFailures: number;
+  lastError: AgendaRefreshFailureReason | null;
+  hasSyncedOnce: boolean;
+}): AgendaRefreshStatus {
+  if (state.refreshing) return 'refreshing';
+  if (state.consecutiveFailures > 0) {
+    return state.lastError === 'network' ? 'offline' : 'error';
+  }
+  return state.hasSyncedOnce ? 'fresh' : 'idle';
+}
+
 export function createAgendaRefreshController(
   options: AgendaRefreshControllerOptions,
 ): AgendaRefreshController {

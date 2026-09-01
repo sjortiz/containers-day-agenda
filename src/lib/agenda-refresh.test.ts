@@ -2,7 +2,11 @@ import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import type { Agenda } from '@/types';
 import type { AgendaFetchResult } from './agenda-remote';
-import { createAgendaRefreshController } from './agenda-refresh';
+import {
+  computeNextPollDelayMs,
+  createAgendaRefreshController,
+  deriveAgendaRefreshStatus,
+} from './agenda-refresh';
 
 function makeAgenda(fetchedAt: string): Agenda {
   return {
@@ -235,6 +239,29 @@ describe('createAgendaRefreshController', () => {
     assert.deepEqual(afterDispose, { kind: 'failed', reason: 'aborted' });
   });
 
+  it('triggers concurrentes reciben la MISMA identidad de promesa (para poder deduplicar su .then)', async () => {
+    // `useAgendaRefresh` deduplica el `.then` que procesa la resolución
+    // guardando la identidad de la promesa ya "atendida": esto solo funciona
+    // si, como acá, dos llamadas concurrentes a `requestRefresh()` devuelven
+    // objetos Promise idénticos (no solo valores `deepEqual` una vez
+    // resueltas). Esta prueba fija esa garantía a nivel de controller.
+    const current = makeAgenda('2026-08-22T08:00:00-04:00');
+    const pending = deferred<AgendaFetchResult>();
+
+    const controller = createAgendaRefreshController({
+      getCurrentAgenda: () => current,
+      onUpdate: () => {},
+      fetchAgenda: async () => pending.promise,
+    });
+
+    const first = controller.requestRefresh();
+    const second = controller.requestRefresh();
+    assert.equal(first, second, 'debe ser la misma instancia de Promise, no solo un valor equivalente');
+
+    pending.resolve({ ok: false, reason: 'network' });
+    await first;
+  });
+
   it('lifecycle: un controller nuevo tras disponer del anterior funciona con normalidad', async () => {
     // Modela lo que hace `useAgendaRefresh` en cada montaje de efecto (y, en
     // particular, en el replay de React Strict Mode: monta → limpia → vuelve
@@ -268,5 +295,88 @@ describe('createAgendaRefreshController', () => {
     const outcome = await newController.requestRefresh();
     assert.deepEqual(outcome, { kind: 'updated', agenda: fresh });
     assert.equal(updateCalls, 1);
+  });
+});
+
+describe('computeNextPollDelayMs', () => {
+  it('usa la cadencia base cuando no hay fallas', () => {
+    assert.equal(computeNextPollDelayMs(0, 60_000), 60_000);
+    assert.equal(computeNextPollDelayMs(-1, 60_000), 60_000);
+  });
+
+  it('aplica la secuencia de backoff acotado tras fallas consecutivas', () => {
+    assert.equal(computeNextPollDelayMs(1, 60_000), 30_000);
+    assert.equal(computeNextPollDelayMs(2, 60_000), 60_000);
+    assert.equal(computeNextPollDelayMs(3, 60_000), 120_000);
+    assert.equal(computeNextPollDelayMs(4, 60_000), 300_000);
+  });
+
+  it('se mantiene en el tope tras superar la secuencia', () => {
+    assert.equal(computeNextPollDelayMs(5, 60_000), 300_000);
+    assert.equal(computeNextPollDelayMs(100, 60_000), 300_000);
+  });
+});
+
+describe('deriveAgendaRefreshStatus', () => {
+  it('"refreshing" tiene prioridad sobre cualquier otro estado', () => {
+    assert.equal(
+      deriveAgendaRefreshStatus({
+        refreshing: true,
+        consecutiveFailures: 3,
+        lastError: 'network',
+        hasSyncedOnce: true,
+      }),
+      'refreshing',
+    );
+  });
+
+  it('"offline" cuando la última falla fue de red', () => {
+    assert.equal(
+      deriveAgendaRefreshStatus({
+        refreshing: false,
+        consecutiveFailures: 1,
+        lastError: 'network',
+        hasSyncedOnce: true,
+      }),
+      'offline',
+    );
+  });
+
+  it('"error" para fallas que no son de red', () => {
+    for (const reason of ['http', 'invalid', 'timeout', 'aborted'] as const) {
+      assert.equal(
+        deriveAgendaRefreshStatus({
+          refreshing: false,
+          consecutiveFailures: 1,
+          lastError: reason,
+          hasSyncedOnce: true,
+        }),
+        'error',
+      );
+    }
+  });
+
+  it('"fresh" tras sincronizar sin fallas pendientes', () => {
+    assert.equal(
+      deriveAgendaRefreshStatus({
+        refreshing: false,
+        consecutiveFailures: 0,
+        lastError: null,
+        hasSyncedOnce: true,
+      }),
+      'fresh',
+    );
+  });
+
+  it('"idle" antes de la primera sincronización', () => {
+    assert.equal(
+      deriveAgendaRefreshStatus({
+        refreshing: false,
+        consecutiveFailures: 0,
+        lastError: null,
+        hasSyncedOnce: false,
+      }),
+      'idle',
+    );
   });
 });
