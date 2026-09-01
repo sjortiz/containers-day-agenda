@@ -5,6 +5,9 @@
 import type { Agenda } from '@/types';
 
 const SELECTED_KEY = 'cd-agenda:selected:v1';
+// Ocurrencias de aviso ya disparadas, como claves `id@start` (ver
+// `occurrenceKey` en `lib/agenda.ts`). Puede contener entradas legado de
+// solo-ID de antes de esa migración; `reconcileNotified` las traduce/depura.
 const NOTIFIED_KEY = 'cd-agenda:notified:v1';
 // Charlas de "única opción" que ya sembramos como marcadas por defecto. Las
 // guardamos aparte para sembrar cada una una sola vez: si la persona la desmarca
