@@ -1,102 +1,106 @@
 # Talk Track
 
-PWA que reúne agendas de eventos —incluyendo Containers Day y APIs públicas de
-Sessionize—, te deja **armar tu propia agenda** (guardada en el dispositivo, sin cuenta ni backend) y
-te **avisa 10 minutos antes** de cada charla que elegiste, mostrando **salón, título y speaker**.
+A PWA that brings event schedules together—including Containers Day and public
+Sessionize APIs—lets you **build your personal agenda** (stored on your device,
+with no account or backend), and **notifies you 10 minutes before** each selected
+talk with its **room, title, and speaker**.
 
-Hecha con **Next.js** (export estático) para publicarse en **GitHub Pages**.
+Built with **Next.js** as a static export for deployment to **GitHub Pages**.
 
-## Características
+## Features
 
-### Biblioteca de eventos
+### Event library
 
-- Pantalla inicial con todos los eventos guardados en el dispositivo.
-- Containers Day viene agregado de fábrica y obtiene su agenda directamente de
-  su endpoint público de Sessionize.
-- Importación de múltiples eventos pegando una URL pública de Sessionize API v2.
-- Cada tarjeta muestra nombre, fechas, cantidad de sesiones y estado de
-  actualización; al abrirla se accede a la agenda independiente del evento.
-- Los eventos importados se pueden eliminar con confirmación, junto con sus
-  datos locales. Containers Day permanece siempre disponible.
+- A home screen containing all events saved on the device.
+- Containers Day is included by default and loads its schedule directly from its
+  public Sessionize endpoint.
+- Import multiple events by pasting a public Sessionize API v2 URL.
+- Each card shows the event name, dates, session count, and refresh status; opening
+  it takes you to that event's independent schedule.
+- Imported events can be deleted with confirmation, along with their local data.
+  Containers Day always remains available.
 
-### Importación y uso compartido con QR
+### QR importing and sharing
 
-- Registro de eventos mediante URL de Sessionize o escaneando un QR.
-- Generación de un QR para compartir un evento guardado. Contiene la URL pública
-  y el nombre del evento, nunca los favoritos del usuario.
-- Escaneo en vivo mediante `BarcodeDetector`, con fallback basado en `jsQR`.
-- Opción **Tomar foto del QR** para iOS, PWAs o navegadores donde el video de la
-  cámara no esté disponible.
-- Entrada manual por URL siempre disponible.
+- Add an event using a Sessionize URL or by scanning a QR code.
+- Generate a QR code to share a saved event. It contains the public URL and event
+  name, never the user's favorites.
+- Live scanning with `BarcodeDetector`, with a `jsQR`-based fallback.
+- A **Take a photo of the QR code** option for iOS, PWAs, or browsers where live
+  camera video is unavailable.
+- Manual URL entry is always available.
 
-### Agenda personal
+### Personal agenda
 
-- Selección de charlas con ★, almacenada por separado para cada evento.
-- Búsqueda por título, salón, speaker y etiquetas.
-- Filtros por salón y etiquetas, más la vista **Solo las mías**.
-- Agrupación cronológica por hora y opción para limpiar la selección.
-- Las sesiones de opción única se preseleccionan una vez, pero pueden quitarse.
-- Identificación automática de bloques de servicio.
-- Banner de la próxima sesión seleccionada con cuenta regresiva.
+- Select talks with ★, stored independently for each event.
+- Search by title, room, speaker, and tag.
+- Filter by room and tag, plus a **My talks only** view.
+- Chronological grouping by time and an option to clear the selection.
+- Sessions that are the only option in their time slot are selected once by
+  default, but users can deselect them afterward.
+- Automatic identification of service blocks.
+- A countdown banner for the next selected session.
 
-### Actualización en vivo y tolerancia a cambios
+### Live updates and schedule-change resilience
 
-- Consulta directa a Sessionize al abrir un evento, recuperar el foco, volver a
-  estar en línea o regresar a la pestaña.
-- Sondeo cada minuto mientras la agenda está visible para recoger cambios de los
-  organizadores durante el evento.
-- Solicitudes deduplicadas con timeout, protección contra respuestas antiguas y
-  reintentos con espera progresiva.
-- Caché de la última agenda válida para consultarla sin conexión o durante un
-  fallo temporal de Sessionize.
-- Indicador de frescura: actualizando, última actualización, copia sin conexión
-  o error.
-- Si cambia la hora de una charla, sus avisos pendientes se reprograman usando
-  la información más reciente.
-- Las horas de Sessionize sin offset se interpretan en la zona horaria del evento.
+- Fetches Sessionize directly when an event opens, the window regains focus, the
+  device comes back online, or the tab becomes visible again.
+- Polls every minute while the schedule is visible to pick up changes made by
+  organizers during the event.
+- Deduplicated requests with timeouts, stale-response protection, and progressive
+  retry delays.
+- Caches the latest valid schedule for offline access or temporary Sessionize
+  failures.
+- Freshness indicator showing when the app is refreshing, when it last updated,
+  when it is using an offline copy, or when an error occurred.
+- If a talk's start time changes, pending notifications are rescheduled using the
+  latest information.
+- Sessionize times without an explicit offset are interpreted in the event's time
+  zone.
 
-### Avisos y PWA
+### Notifications and PWA
 
-- Notificaciones nativas 10 minutos antes de cada charla seleccionada, con
-  título, salón y speaker.
-- Controles para activar, desactivar y probar las notificaciones.
-- Avisos aislados por evento para evitar colisiones entre agendas.
-- Instalación como PWA en Android e iOS, con orientación según la plataforma.
-- Service Worker, shell sin conexión e interfaz adaptable a móvil y escritorio.
-- Enlace para saltar al contenido, controles semánticos, foco visible y respeto
-  por la preferencia de movimiento reducido.
+- Native notifications 10 minutes before each selected talk, including its title,
+  room, and speaker.
+- Controls to enable, disable, and test notifications.
+- Notifications are scoped by event to prevent collisions between schedules.
+- Installable as a PWA on Android and iOS, with platform-specific guidance.
+- Service Worker, offline app shell, and a responsive mobile and desktop interface.
+- Skip-to-content link, semantic controls, visible focus states, and support for
+  reduced-motion preferences.
 
-### Privacidad y almacenamiento
+### Privacy and storage
 
-- No requiere cuenta ni backend: biblioteca, caché y selecciones se guardan en
-  `localStorage` en el dispositivo.
-- Migración de datos anteriores al formato multi-evento sin perder selecciones.
-- Compartir un evento no comparte favoritos ni otros datos personales.
+- No account or backend required: the event library, cached schedules, and
+  selections are stored in `localStorage` on the device.
+- Existing data is migrated to the multi-event format without losing selections.
+- Sharing an event does not share favorites or any other personal data.
 
-## Limitaciones actuales
+## Current limitations
 
-- La importación admite endpoints públicos de **Sessionize API v2**. Todavía no
-  admite páginas arbitrarias, archivos ICS ni otros proveedores.
-- GitHub Pages es 100% estático: no existe push desde un servidor. Los avisos
-  funcionan mientras la PWA permanece abierta, incluso en segundo plano, pero
-  no pueden llegar si está completamente cerrada.
+- Imports support public **Sessionize API v2** endpoints. Arbitrary event pages,
+  ICS files, and other providers are not supported yet.
+- GitHub Pages is fully static, so there is no server-side push. Notifications work
+  while the PWA remains open, including in the background, but cannot arrive when
+  the app is completely closed.
 
-## Desarrollo
+## Development
 
 ```bash
-make install           # instala las dependencias
-make dev               # http://localhost:3000 (sin basePath en dev)
-make test              # ejecuta las pruebas
-make check             # pruebas + comprobación de TypeScript
-make icons             # regenera los iconos PWA (opcional)
+make install           # install dependencies
+make dev               # http://localhost:3000 (no basePath in development)
+make test              # run the test suite
+make check             # run tests and TypeScript checks
+make icons             # regenerate PWA icons (optional)
 ```
 
-También se pueden ejecutar directamente los comandos equivalentes de `npm`.
+The equivalent `npm` commands can also be run directly.
 
-## Skills de Claude Code
+## Claude Code skills
 
-Para trabajar en este proyecto con Claude Code usamos las siguientes skills de
-[vercel-labs/agent-skills](https://github.com/vercel-labs/agent-skills):
+We use the following skills from
+[vercel-labs/agent-skills](https://github.com/vercel-labs/agent-skills) when
+working on this project with Claude Code:
 
 - `vercel-react-best-practices`
 - `vercel-composition-patterns`
@@ -104,11 +108,11 @@ Para trabajar en este proyecto con Claude Code usamos las siguientes skills de
 - `web-design-guidelines`
 - `writing-guidelines`
 
-No instalamos ni usamos las skills de despliegue, CLI u optimización de Vercel,
-porque este proyecto se publica como export estático en GitHub Pages. Tampoco
-incluimos la skill de React Native porque la aplicación es una PWA web.
+We do not install or use Vercel deployment, CLI, or optimization skills because
+this project is deployed as a static export on GitHub Pages. The React Native
+skill is also excluded because this application is a web PWA.
 
-Instalación global para Claude Code:
+Install the skills globally for Claude Code:
 
 ```bash
 npx skills add vercel-labs/agent-skills --global --agent claude-code \
@@ -117,41 +121,44 @@ npx skills add vercel-labs/agent-skills --global --agent claude-code \
   --yes --copy
 ```
 
-## Build local
+## Local build
 
 ```bash
-npm run build          # genera el sitio estático en ./out
-npx serve out          # previsualizar el export
+npm run build          # generate the static site in ./out
+npx serve out          # preview the export
 ```
 
-> Las notificaciones y el Service Worker requieren **HTTPS** o **localhost**.
+> Notifications and the Service Worker require **HTTPS** or **localhost**.
 
-## Deploy en GitHub Pages
+## Deploying to GitHub Pages
 
-1. Crea un repo en GitHub y sube este proyecto (rama `main`).
-2. En **Settings → Pages → Build and deployment → Source**, elige **GitHub Actions**.
-3. Cada push a `main` dispara `.github/workflows/deploy.yml`, que:
-   - calcula el `basePath` automáticamente según el nombre del repo
-     (`/<repo>` para *project pages*, vacío si el repo es `usuario.github.io`),
-   - hace el export estático y publica `./out`.
+1. Create a GitHub repository and push this project to its `main` branch.
+2. In **Settings → Pages → Build and deployment → Source**, select
+   **GitHub Actions**.
+3. Every push to `main` triggers `.github/workflows/deploy.yml`, which:
+   - calculates `basePath` automatically from the repository name
+     (`/<repo>` for project pages, or empty for `username.github.io`),
+   - generates the static export and publishes `./out`.
 
-El sitio queda en `https://<usuario>.github.io/<repo>/`.
+The site will be available at `https://<username>.github.io/<repo>/`.
 
-### Nombre del repo / basePath
+### Repository name and base path
 
-El workflow deriva el `basePath` solo. Para **build local** el valor por defecto es
-`/containers-day-agenda`; si tu repo se llama distinto, expórtalo:
+The workflow derives `basePath` automatically. For a **local build**, the default
+is `/containers-day-agenda`. If your repository has a different name, provide it
+explicitly:
 
 ```bash
-NEXT_PUBLIC_BASE_PATH=/tu-repo npm run build
+NEXT_PUBLIC_BASE_PATH=/your-repo npm run build
 ```
 
-### Dominio propio (opcional)
+### Custom domain (optional)
 
-Agrega un archivo `public/CNAME` con tu dominio y pon `NEXT_PUBLIC_BASE_PATH=""`.
+Add a `public/CNAME` file containing your domain and set
+`NEXT_PUBLIC_BASE_PATH=""`.
 
-## Refrescar la agenda
+## Schedule refresh
 
-La PWA consulta directamente el endpoint Sessionize de cada evento al abrirse,
-al recuperar foco o conexión y durante el sondeo visible. La última respuesta
-válida se conserva localmente y se usa mientras no haya conexión.
+The PWA queries each event's Sessionize endpoint directly when the event opens,
+when focus or connectivity returns, and during visible polling. The latest valid
+response is stored locally and used while the device is offline.
