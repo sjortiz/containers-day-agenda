@@ -10,6 +10,7 @@ import {
   loadNotified,
   loadSelected,
   loadSoleSeeded,
+  removeEvent,
   saveAgendaCache,
   saveNotificationsEnabled,
   saveNotified,
@@ -278,6 +279,25 @@ describe('storage.ts', () => {
 
     it('getEvent devuelve null si no está registrado', () => {
       assert.equal(getEvent('no-existe'), null);
+    });
+
+    it('removeEvent elimina el índice y todo el estado con scope', () => {
+      const agenda = makeAgenda('demo-event');
+      upsertEvent(agenda.event);
+      saveAgendaCache('demo-event', agenda);
+      saveSelected('demo-event', new Set(['talk-1']));
+      saveNotified('demo-event', new Set(['talk-1@start']));
+      saveSoleSeeded('demo-event', new Set(['talk-2']));
+      saveNotificationsEnabled('demo-event', true);
+
+      removeEvent('demo-event');
+
+      assert.equal(getEvent('demo-event'), null);
+      assert.equal(loadAgendaCache('demo-event'), null);
+      assert.deepEqual(loadSelected('demo-event'), new Set());
+      assert.deepEqual(loadNotified('demo-event'), new Set());
+      assert.deepEqual(loadSoleSeeded('demo-event'), new Set());
+      assert.equal(loadNotificationsEnabled('demo-event'), false);
     });
 
     it('listEvents descarta un índice corrupto sin lanzar', () => {

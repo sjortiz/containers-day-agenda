@@ -220,6 +220,28 @@ function saveEvents(events: EventMeta[]): void {
   }
 }
 
+const EVENT_DATA_SUFFIXES = [
+  'selected:v1',
+  'notified:v1',
+  'sole-seeded:v1',
+  'agenda:v1',
+  'notifications-enabled:v1',
+] as const;
+
+/** Removes an event and all of its device-local state. */
+export function removeEvent(eventId: string): void {
+  if (!isValidEventId(eventId) || !hasWindow()) return;
+  try {
+    saveEvents(listEvents().filter((event) => event.id !== eventId));
+    for (const suffix of EVENT_DATA_SUFFIXES) {
+      const key = eventKey(eventId, suffix);
+      if (key) window.localStorage.removeItem(key);
+    }
+  } catch {
+    /* almacenamiento bloqueado: no hay forma segura de completar el borrado */
+  }
+}
+
 /** Metadata de un evento por ID, o `null` si no está registrado. */
 export function getEvent(id: string): EventMeta | null {
   return listEvents().find((e) => e.id === id) ?? null;

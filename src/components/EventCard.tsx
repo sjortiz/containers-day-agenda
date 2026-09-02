@@ -7,7 +7,13 @@ import {
 } from '@/lib/event-summary';
 import ShareEventButton from './ShareEventButton';
 
-export default function EventCard({ agenda }: { agenda: Agenda }) {
+export default function EventCard({
+  agenda,
+  onDelete,
+}: {
+  agenda: Agenda;
+  onDelete?: () => void;
+}) {
   const { event } = agenda;
   const refreshLabel =
     event.refreshMode === 'live' ? 'Actualización automática' : 'Copia importada';
@@ -36,6 +42,15 @@ export default function EventCard({ agenda }: { agenda: Agenda }) {
           Abrir agenda <span aria-hidden="true">→</span>
         </Link>
         {event.provider === 'sessionize' ? <ShareEventButton event={event} /> : null}
+        {onDelete ? (
+          <button type="button" className="event-card__delete" onClick={() => {
+            if (window.confirm(`¿Eliminar “${event.name}” y todos sus datos de este dispositivo?`)) {
+              onDelete();
+            }
+          }}>
+            Eliminar
+          </button>
+        ) : null}
       </div>
     </article>
   );

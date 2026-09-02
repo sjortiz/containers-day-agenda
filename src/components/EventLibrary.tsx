@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import type { Agenda } from '@/types';
-import { listEvents, loadAgendaCache, saveAgendaCache, upsertEvent } from '@/lib/storage';
+import { listEvents, loadAgendaCache, removeEvent, saveAgendaCache, upsertEvent } from '@/lib/storage';
 import EventCard from './EventCard';
 import AddEventPanel from './AddEventPanel';
 import { reconcileBundledAgenda } from '@/lib/bundled-agenda';
@@ -72,7 +72,16 @@ export default function EventLibrary({ bundledAgenda }: { bundledAgenda: Agenda 
         ) : (
           <div className="event-grid">
             {agendas.map((agenda) => (
-              <EventCard key={agenda.event.id} agenda={agenda} />
+              <EventCard
+                key={agenda.event.id}
+                agenda={agenda}
+                onDelete={agenda.event.id === bundledAgenda.event.id ? undefined : () => {
+                  removeEvent(agenda.event.id);
+                  setAgendas((current) => current.filter(
+                    (item) => item.event.id !== agenda.event.id,
+                  ));
+                }}
+              />
             ))}
           </div>
         )}

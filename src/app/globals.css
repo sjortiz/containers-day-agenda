@@ -537,6 +537,21 @@ a {
   font-weight: 750;
   cursor: pointer;
 }
+.event-card__delete {
+  min-height: 40px;
+  padding: 7px 10px;
+  border: 0;
+  background: transparent;
+  color: #fca5a5;
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 750;
+  cursor: pointer;
+}
+.event-card__delete:hover {
+  color: #fecaca;
+  text-decoration: underline;
+}
 .event-card__share:hover {
   border-color: var(--accent);
 }
