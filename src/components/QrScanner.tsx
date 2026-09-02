@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import jsQR from 'jsqr';
 
 interface DetectedBarcode { rawValue: string }
 interface BarcodeDetectorInstance {
@@ -40,13 +41,13 @@ export default function QrScanner({
   const start = async () => {
     setError(null);
     const Detector = barcodeDetector();
-    if (!Detector || !navigator.mediaDevices?.getUserMedia) {
-      setError('Este navegador no permite escanear QR aquí. Puedes pegar el enlace manualmente.');
+    if (!navigator.mediaDevices?.getUserMedia) {
+      setError('Este navegador no permite abrir la cámara aquí. Puedes pegar el enlace manualmente.');
       return;
     }
     try {
-      const supported = await Detector.getSupportedFormats?.();
-      if (supported && !supported.includes('qr_code')) throw new Error('unsupported');
+      const supported = await Detector?.getSupportedFormats?.();
+      const useNativeDetector = Boolean(Detector && (!supported || supported.includes('qr_code')));
       const stream = await navigator.mediaDevices.getUserMedia({
         video: { facingMode: { ideal: 'environment' } },
         audio: false,
@@ -57,14 +58,33 @@ export default function QrScanner({
       if (!video) return stop();
       video.srcObject = stream;
       await video.play();
-      const detector = new Detector({ formats: ['qr_code'] });
+      const detector = useNativeDetector && Detector
+        ? new Detector({ formats: ['qr_code'] })
+        : null;
+      const canvas = document.createElement('canvas');
+      const context = canvas.getContext('2d', { willReadFrequently: true });
       const scan = async () => {
         if (!videoRef.current || !streamRef.current) return;
         try {
-          const [code] = await detector.detect(videoRef.current);
-          if (code?.rawValue) {
+          let value: string | undefined;
+          if (detector) {
+            const [code] = await detector.detect(videoRef.current);
+            value = code?.rawValue;
+          } else if (context && videoRef.current.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA) {
+            const videoWidth = videoRef.current.videoWidth;
+            const videoHeight = videoRef.current.videoHeight;
+            const scale = Math.min(1, 960 / Math.max(videoWidth, videoHeight));
+            canvas.width = Math.max(1, Math.round(videoWidth * scale));
+            canvas.height = Math.max(1, Math.round(videoHeight * scale));
+            context.drawImage(videoRef.current, 0, 0, canvas.width, canvas.height);
+            const image = context.getImageData(0, 0, canvas.width, canvas.height);
+            value = jsQR(image.data, image.width, image.height, {
+              inversionAttempts: 'attemptBoth',
+            })?.data;
+          }
+          if (value) {
             stop();
-            onDetected(code.rawValue.trim());
+            onDetected(value.trim());
             return;
           }
         } catch {
