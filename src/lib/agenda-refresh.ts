@@ -12,7 +12,6 @@
  */
 import type { Agenda } from '@/types';
 import {
-  fetchPublishedAgenda,
   isNewerAgenda,
   type AgendaFetchFailureReason,
   type AgendaFetchResult,
@@ -36,8 +35,8 @@ export interface AgendaRefreshControllerOptions {
   onUpdate: (agenda: Agenda) => void;
   /** Milisegundos antes de abortar una petición en curso. */
   timeoutMs?: number;
-  /** Punto de inyección para pruebas; por defecto pide `/agenda.json`. */
-  fetchAgenda?: (signal: AbortSignal) => Promise<AgendaFetchResult>;
+  /** Obtiene una agenda desde la fuente remota del evento. */
+  fetchAgenda: (signal: AbortSignal) => Promise<AgendaFetchResult>;
 }
 
 export interface AgendaRefreshController {
@@ -145,7 +144,7 @@ export function createAgendaRefreshController(
     getCurrentAgenda,
     onUpdate,
     timeoutMs = DEFAULT_TIMEOUT_MS,
-    fetchAgenda = fetchPublishedAgenda,
+    fetchAgenda,
   } = options;
 
   let inFlight: Promise<AgendaRefreshOutcome> | null = null;

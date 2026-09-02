@@ -205,13 +205,11 @@ export function useAgendaRefresh(
     if (!enabled) return;
     const controller = createAgendaRefreshController({
       getCurrentAgenda: () => agendaRef.current,
-      fetchAgenda: agendaRef.current.event.provider === 'sessionize'
-        ? (signal) => fetchSessionizeAgenda(
-            agendaRef.current.event.sourceUrl,
-            signal,
-            agendaRef.current.event,
-          )
-        : undefined,
+      fetchAgenda: (signal) => fetchSessionizeAgenda(
+        agendaRef.current.event.sourceUrl,
+        signal,
+        agendaRef.current.event,
+      ),
       onUpdate: (fresh) => {
         if (fresh.event.id !== eventId) return;
         agendaRef.current = fresh;

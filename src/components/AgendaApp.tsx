@@ -30,7 +30,6 @@ import FiltersBar from './Filters';
 import UpcomingBanner from './UpcomingBanner';
 import NotificationToggle from './NotificationToggle';
 import InstallPrompt from './InstallPrompt';
-import DelayBanner from './DelayBanner';
 import FreshnessIndicator from './FreshnessIndicator';
 
 const EMPTY_FILTERS: Filters = {
@@ -51,7 +50,9 @@ export default function AgendaApp({
   // app y se sincroniza desde el endpoint propio del evento en runtime.
   const { agenda, status, lastSuccessfulSyncAt, lastAttemptAt } =
     useAgendaRefresh(eventId, initialAgenda, {
-      enabled: initialAgenda.event.refreshMode === 'live',
+      enabled:
+        initialAgenda.event.refreshMode === 'live' &&
+        initialAgenda.event.provider === 'sessionize',
     });
   const { selectedIds, hydrated, isSelected, toggle, clear, seedDefaults } =
     useSelectedSessions(eventId);
@@ -215,8 +216,6 @@ export default function AgendaApp({
       </header>
 
       <main id="main-content" className="container">
-        <DelayBanner />
-
         <InstallPrompt />
 
         {hydrated && isStandalone && selectedIds.size === 0 && (

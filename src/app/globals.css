@@ -712,32 +712,6 @@ a {
   flex: 1 1 220px;
 }
 
-/* ---------- Delay banner (evento atrasado) ---------- */
-.delay-banner {
-  display: flex;
-  align-items: flex-start;
-  gap: 10px;
-  background: rgba(245, 158, 11, 0.12);
-  border: 1px solid rgba(245, 158, 11, 0.4);
-  border-left: 4px solid var(--warn);
-  border-radius: var(--radius);
-  padding: 12px 14px;
-  margin-bottom: 16px;
-}
-.delay-banner__icon {
-  font-size: 1.2rem;
-  line-height: 1.3;
-  flex: none;
-}
-.delay-banner__text {
-  margin: 0;
-  font-size: 0.9rem;
-  color: var(--text);
-}
-.delay-banner__text strong {
-  color: var(--warn);
-}
-
 /* ---------- Banner ---------- */
 .banner {
   border: 1px solid var(--border);

@@ -129,16 +129,6 @@ export function reconcileNotified(
   return next;
 }
 
-/** Charlas seleccionadas ordenadas por hora de inicio. */
-export function selectedSessions(
-  agenda: Agenda,
-  selectedIds: Set<string>,
-): Session[] {
-  return agenda.sessions
-    .filter((s) => selectedIds.has(s.id))
-    .sort((a, b) => (a.start < b.start ? -1 : 1));
-}
-
 /** Próxima sesión seleccionada que aún no empieza (o null). */
 export function nextUpcomingSelected(
   agenda: Agenda,

@@ -2,7 +2,7 @@ import { withBase } from '@/config';
 
 export type NotifPermission = 'default' | 'granted' | 'denied' | 'unsupported';
 
-export function isSupported(): boolean {
+function isSupported(): boolean {
   return typeof window !== 'undefined' && 'Notification' in window;
 }
 

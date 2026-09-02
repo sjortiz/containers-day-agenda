@@ -3,7 +3,6 @@ import assert from 'node:assert/strict';
 import type { Agenda } from '@/types';
 import { reconcileNotified } from './agenda';
 import {
-  getEvent,
   listEvents,
   loadAgendaCache,
   loadNotificationsEnabled,
@@ -241,7 +240,6 @@ describe('storage.ts', () => {
       };
       upsertEvent(meta);
       assert.deepEqual(listEvents(), [meta]);
-      assert.deepEqual(getEvent('containers-day'), meta);
     });
 
     it('upsertEvent actualiza en el lugar (mismo id) preservando el orden', () => {
@@ -277,10 +275,6 @@ describe('storage.ts', () => {
       assert.equal(events[0].name, 'A actualizado');
     });
 
-    it('getEvent devuelve null si no está registrado', () => {
-      assert.equal(getEvent('no-existe'), null);
-    });
-
     it('removeEvent elimina el índice y todo el estado con scope', () => {
       const agenda = makeAgenda('demo-event');
       upsertEvent(agenda.event);
@@ -292,7 +286,7 @@ describe('storage.ts', () => {
 
       removeEvent('demo-event');
 
-      assert.equal(getEvent('demo-event'), null);
+      assert.equal(listEvents().some((event) => event.id === 'demo-event'), false);
       assert.equal(loadAgendaCache('demo-event'), null);
       assert.deepEqual(loadSelected('demo-event'), new Set());
       assert.deepEqual(loadNotified('demo-event'), new Set());

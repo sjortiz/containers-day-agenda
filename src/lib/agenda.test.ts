@@ -8,7 +8,6 @@ import {
   soleOptionIds,
   occurrenceKey,
   reconcileNotified,
-  selectedSessions,
   nextUpcomingSelected,
   type Filters,
 } from './agenda';
@@ -249,17 +248,6 @@ describe('reconcileNotified', () => {
     const now = start;
     const res = reconcileNotified(new Set([key]), roomChanged, now, lead);
     assert.deepEqual([...res], [key]);
-  });
-});
-
-describe('selectedSessions', () => {
-  it('filtra por selección y ordena por hora de inicio', () => {
-    const late = makeSession({ id: 'late', start: '2026-08-22T15:00:00-04:00' });
-    const early = makeSession({ id: 'early', start: '2026-08-22T08:00:00-04:00' });
-    const notMine = makeSession({ id: 'notMine', start: '2026-08-22T09:00:00-04:00' });
-    const agenda = makeAgenda([late, early, notMine]);
-    const res = selectedSessions(agenda, new Set(['late', 'early']));
-    assert.deepEqual(res.map((s) => s.id), ['early', 'late']);
   });
 });
 

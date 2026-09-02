@@ -36,10 +36,6 @@ export function formatDayHeading(iso: string, tz: string): string {
 }
 
 /** Minutos (con signo) entre ahora y el instante dado. Positivo = en el futuro. */
-export function minutesUntil(iso: string, now: number = Date.now()): number {
-  return Math.round((toMs(iso) - now) / 60000);
-}
-
 /** Texto humano de cuenta regresiva a partir de milisegundos restantes. */
 export function describeCountdown(msUntil: number): string {
   if (msUntil <= 0) return 'empezando ahora';

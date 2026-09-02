@@ -1,9 +1,9 @@
 /**
- * Genera los iconos PWA a partir de un SVG monograma. Correr: `npm run make-icons`.
+ * Generates the Talk Track PWA icons from a reproducible SVG source.
  * Requiere `sharp` (devDependency). Salida: public/icons/*.png y src/app/icon.png.
  */
 import sharp from 'sharp';
-import { mkdirSync } from 'node:fs';
+import { mkdirSync, readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 
@@ -12,19 +12,7 @@ const root = join(__dirname, '..');
 const iconsDir = join(root, 'public', 'icons');
 mkdirSync(iconsDir, { recursive: true });
 
-const svg = `<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
-  <defs>
-    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#4f8cff"/>
-      <stop offset="1" stop-color="#2ee6a6"/>
-    </linearGradient>
-  </defs>
-  <rect width="512" height="512" fill="#0b1020"/>
-  <rect x="64" y="64" width="384" height="384" rx="88" fill="url(#g)"/>
-  <text x="256" y="322" font-family="Arial, Helvetica, sans-serif" font-size="196"
-        font-weight="800" text-anchor="middle" fill="#0b1020">CD</text>
-  <circle cx="378" cy="150" r="36" fill="#ff5d6c" stroke="#0b1020" stroke-width="12"/>
-</svg>`;
+const svg = readFileSync(join(root, 'public', 'icon-source.svg'));
 
 const targets = [
   { file: join(iconsDir, 'icon-192.png'), size: 192 },
@@ -34,10 +22,9 @@ const targets = [
   { file: join(root, 'src', 'app', 'icon.png'), size: 512 },
 ];
 
-const buf = Buffer.from(svg);
 await Promise.all(
   targets.map(({ file, size }) =>
-    sharp(buf).resize(size, size).png().toFile(file),
+    sharp(svg).resize(size, size).png().toFile(file),
   ),
 );
 

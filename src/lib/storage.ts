@@ -242,11 +242,6 @@ export function removeEvent(eventId: string): void {
   }
 }
 
-/** Metadata de un evento por ID, o `null` si no está registrado. */
-export function getEvent(id: string): EventMeta | null {
-  return listEvents().find((e) => e.id === id) ?? null;
-}
-
 /** Inserta o actualiza (por `id`) un evento en el índice, preservando el
  * orden existente. No-op silencioso si `meta.id` no es un event ID válido. */
 export function upsertEvent(meta: EventMeta): void {

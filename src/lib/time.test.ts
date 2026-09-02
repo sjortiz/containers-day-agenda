@@ -5,7 +5,6 @@ import {
   formatTime,
   formatTimeRange,
   formatDayHeading,
-  minutesUntil,
   describeCountdown,
   formatElapsed,
 } from './time';
@@ -50,22 +49,6 @@ describe('formatDayHeading', () => {
     assert.ok(out.includes('sábado'), `esperaba "sábado" en: ${out}`);
     assert.ok(out.includes('22'), `esperaba "22" en: ${out}`);
     assert.ok(out.includes('agosto'), `esperaba "agosto" en: ${out}`);
-  });
-});
-
-describe('minutesUntil', () => {
-  const base = new Date('2026-08-22T09:00:00-04:00').getTime();
-
-  it('positivo en el futuro', () => {
-    assert.equal(minutesUntil('2026-08-22T09:10:00-04:00', base), 10);
-  });
-
-  it('negativo en el pasado', () => {
-    assert.equal(minutesUntil('2026-08-22T08:45:00-04:00', base), -15);
-  });
-
-  it('redondea al minuto más cercano', () => {
-    assert.equal(minutesUntil('2026-08-22T09:00:40-04:00', base), 1);
   });
 });
 
