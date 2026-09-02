@@ -96,6 +96,21 @@ make icons             # regenerate PWA icons (optional)
 
 The equivalent `npm` commands can also be run directly.
 
+### Claude Code quick start
+
+The repository includes project instructions in [`CLAUDE.md`](./CLAUDE.md) and
+safe shared permissions in [`.claude/settings.json`](./.claude/settings.json).
+After installing and authenticating Claude Code, start it from the repository
+root:
+
+```bash
+claude
+```
+
+Claude will automatically load the project's architecture, constraints,
+validation commands, and shared configuration. Personal overrides belong in
+`.claude/settings.local.json` and should not be committed.
+
 ## Claude Code skills
 
 We use the following skills from
