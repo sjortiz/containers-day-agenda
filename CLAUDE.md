@@ -53,6 +53,10 @@ available in `package.json`.
 Tests are colocated as `src/**/*.test.ts` and run with Node's native test runner
 through `scripts/test-register.mjs`.
 
+Project-local skills are checked into `.claude/skills/` and are discovered
+automatically. Use the relevant skill when its description matches the task;
+do not require contributors to install a global copy.
+
 ## Product constraints
 
 Preserve these decisions unless the task explicitly changes them:

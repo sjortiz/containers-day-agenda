@@ -113,7 +113,7 @@ validation commands, and shared configuration. Personal overrides belong in
 
 ## Claude Code skills
 
-We use the following skills from
+The repository includes the following project-local skills from
 [vercel-labs/agent-skills](https://github.com/vercel-labs/agent-skills) when
 working on this project with Claude Code:
 
@@ -123,14 +123,18 @@ working on this project with Claude Code:
 - `web-design-guidelines`
 - `writing-guidelines`
 
-We do not install or use Vercel deployment, CLI, or optimization skills because
+Claude Code discovers them automatically under `.claude/skills/`; users do not
+need to install them globally. Their source versions and hashes are recorded in
+`skills-lock.json`.
+
+We do not include Vercel deployment, CLI, or optimization skills because
 this project is deployed as a static export on GitHub Pages. The React Native
 skill is also excluded because this application is a web PWA.
 
-Install the skills globally for Claude Code:
+To refresh the checked-in copies deliberately, run:
 
 ```bash
-npx skills add vercel-labs/agent-skills --global --agent claude-code \
+npx skills add vercel-labs/agent-skills --agent claude-code \
   --skill vercel-composition-patterns vercel-react-best-practices \
   vercel-react-view-transitions web-design-guidelines writing-guidelines \
   --yes --copy
