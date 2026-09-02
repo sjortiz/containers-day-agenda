@@ -47,9 +47,8 @@ export default function AgendaApp({
   eventId: string;
   agenda: Agenda;
 }) {
-  // La agenda vive en `useAgendaRefresh`: arranca con la horneada en build,
-  // pero se mantiene sincronizada con `/agenda.json` en runtime de forma
-  // independiente del estado de las notificaciones (ver ese hook).
+  // La agenda vive en `useAgendaRefresh`: arranca con la copia incluida en la
+  // app y se sincroniza desde el endpoint propio del evento en runtime.
   const { agenda, status, lastSuccessfulSyncAt, lastAttemptAt } =
     useAgendaRefresh(eventId, initialAgenda, {
       enabled: initialAgenda.event.refreshMode === 'live',

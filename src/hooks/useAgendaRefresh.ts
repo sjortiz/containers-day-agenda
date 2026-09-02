@@ -41,7 +41,7 @@ export interface UseAgendaRefreshOptions {
 }
 
 /**
- * Mantiene la agenda sincronizada con `/agenda.json` de forma independiente
+ * Mantiene la agenda sincronizada con su fuente remota de forma independiente
  * del estado de las notificaciones: pide el horario al montar, sondea solo
  * mientras la pestaña está visible, y vuelve a chequear al recuperar
  * visibilidad, foco o conexión. Toda la coordinación de la petición (dedupe,

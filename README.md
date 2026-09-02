@@ -8,8 +8,8 @@ Hecha con **Next.js** (export estático) para publicarse en **GitHub Pages**.
 
 ## Cómo funciona
 
-- **Datos**: `scripts/fetch-agenda.mjs` descarga y parsea la agenda a `src/data/agenda.json`
-  en build time. Los horarios se guardan con el offset del evento (`America/Santo_Domingo`, UTC-4).
+- **Datos**: Containers Day viene sembrado como agenda inicial y se actualiza
+  directamente desde su endpoint público de Sessionize en el navegador.
 - **Más eventos**: la pantalla inicial acepta endpoints API v2 de Sessionize y
   guarda cada agenda por separado en el dispositivo.
 - **Tu selección**: se guarda en `localStorage` (por dispositivo). Marca ★ en cada charla.
@@ -21,7 +21,6 @@ Hecha con **Next.js** (export estático) para publicarse en **GitHub Pages**.
 
 ```bash
 npm install
-npm run fetch-agenda   # regenera src/data/agenda.json (opcional; ya viene commiteado)
 npm run make-icons     # regenera los iconos PWA (opcional)
 npm run dev            # http://localhost:3000   (sin basePath en dev)
 ```
@@ -66,7 +65,7 @@ npx serve out          # previsualizar el export
 3. Cada push a `main` dispara `.github/workflows/deploy.yml`, que:
    - calcula el `basePath` automáticamente según el nombre del repo
      (`/<repo>` para *project pages*, vacío si el repo es `usuario.github.io`),
-   - refresca la agenda, hace el export estático y publica `./out`.
+   - hace el export estático y publica `./out`.
 
 El sitio queda en `https://<usuario>.github.io/<repo>/`.
 
@@ -85,6 +84,6 @@ Agrega un archivo `public/CNAME` con tu dominio y pon `NEXT_PUBLIC_BASE_PATH=""`
 
 ## Refrescar la agenda
 
-Si containers.day actualiza su agenda, corre `npm run fetch-agenda` y commitea el
-`src/data/agenda.json` resultante (o simplemente vuelve a disparar el workflow: el
-`prebuild` la refresca automáticamente).
+La PWA consulta directamente el endpoint Sessionize de cada evento al abrirse,
+al recuperar foco o conexión y durante el sondeo visible. El JSON incluido en el
+repositorio es únicamente la copia inicial disponible antes de la primera sincronización.

@@ -2,9 +2,9 @@
   "event": {
     "id": "containers-day",
     "name": "Containers Day",
-    "sourceUrl": "https://containers.day/agenda/",
+    "sourceUrl": "https://sessionize.com/api/v2/hnm5gsws/view/GridSmart",
     "timezone": "America/Santo_Domingo",
-    "provider": "containers-day",
+    "provider": "sessionize",
     "refreshMode": "live",
     "addedAt": "2026-08-22T14:09:20.370Z"
   },

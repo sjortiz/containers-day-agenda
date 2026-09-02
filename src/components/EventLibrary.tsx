@@ -5,6 +5,7 @@ import type { Agenda } from '@/types';
 import { listEvents, loadAgendaCache, saveAgendaCache, upsertEvent } from '@/lib/storage';
 import EventCard from './EventCard';
 import AddEventPanel from './AddEventPanel';
+import { reconcileBundledAgenda } from '@/lib/bundled-agenda';
 
 export default function EventLibrary({ bundledAgenda }: { bundledAgenda: Agenda }) {
   const [agendas, setAgendas] = useState<Agenda[]>([]);
@@ -13,12 +14,13 @@ export default function EventLibrary({ bundledAgenda }: { bundledAgenda: Agenda 
   useEffect(() => {
     const bundledId = bundledAgenda.event.id;
     upsertEvent(bundledAgenda.event);
-    if (!loadAgendaCache(bundledId)) saveAgendaCache(bundledId, bundledAgenda);
+    const seededAgenda = reconcileBundledAgenda(loadAgendaCache(bundledId), bundledAgenda);
+    saveAgendaCache(bundledId, seededAgenda);
 
     const available = listEvents().flatMap((event) => {
       const agenda = loadAgendaCache(event.id);
       if (agenda) return [agenda];
-      return event.id === bundledId ? [bundledAgenda] : [];
+      return event.id === bundledId ? [seededAgenda] : [];
     });
     setAgendas(available);
     setHydrated(true);

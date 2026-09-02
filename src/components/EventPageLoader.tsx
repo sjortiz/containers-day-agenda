@@ -6,6 +6,7 @@ import type { Agenda } from '@/types';
 import { CONTAINERS_DAY_EVENT_ID, isValidEventId } from '@/lib/event-id';
 import { loadAgendaCache, saveAgendaCache, upsertEvent } from '@/lib/storage';
 import AgendaApp from './AgendaApp';
+import { reconcileBundledAgenda } from '@/lib/bundled-agenda';
 
 type LoadState =
   | { kind: 'loading' }
@@ -25,9 +26,9 @@ export default function EventPageLoader({ bundledAgenda }: { bundledAgenda: Agen
 
     if (eventId === CONTAINERS_DAY_EVENT_ID) {
       upsertEvent(bundledAgenda.event);
-      const cached = loadAgendaCache(eventId);
-      if (!cached) saveAgendaCache(eventId, bundledAgenda);
-      setState({ kind: 'ready', agenda: cached ?? bundledAgenda });
+      const agenda = reconcileBundledAgenda(loadAgendaCache(eventId), bundledAgenda);
+      saveAgendaCache(eventId, agenda);
+      setState({ kind: 'ready', agenda });
       return;
     }
 

@@ -1,6 +1,6 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { isSessionizeUrl, normalizeSessionizeGrid } from './sessionize';
+import { isSessionizeUrl, normalizeSessionizeGrid, sessionizeInstant } from './sessionize';
 
 const grid = [{
   date: '2026-09-01T00:00:00Z',
@@ -13,6 +13,12 @@ const grid = [{
 }];
 
 describe('Sessionize adapter', () => {
+  it('interprets offset-less Sessionize times in the event timezone', () => {
+    assert.equal(
+      sessionizeInstant('2026-08-22T09:00:00', 'America/Santo_Domingo'),
+      '2026-08-22T13:00:00.000Z',
+    );
+  });
   it('accepts Sessionize URLs and rejects other hosts', () => {
     assert.equal(isSessionizeUrl('https://sessionize.com/api/v2/abc123/view/GridSmart'), true);
     assert.equal(isSessionizeUrl('https://example.com/api/v2/abc123/view/GridSmart'), false);

@@ -11,6 +11,35 @@ function endpointId(url: string): string | null {
   return new URL(url).pathname.match(/\/api\/v2\/([a-z0-9]+)(?:\/|$)/i)?.[1] ?? null;
 }
 
+/** Converts Sessionize's offset-less local timestamps into real instants. */
+export function sessionizeInstant(value: string, timezone: string): string | null {
+  if (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/.test(value)) {
+    const parsed = Date.parse(value);
+    return Number.isNaN(parsed) ? null : new Date(parsed).toISOString();
+  }
+  const desired = Date.parse(`${value}Z`);
+  let instant = desired;
+  try {
+    const formatter = new Intl.DateTimeFormat('en-US', {
+      timeZone: timezone, year: 'numeric', month: '2-digit', day: '2-digit',
+      hour: '2-digit', minute: '2-digit', second: '2-digit', hourCycle: 'h23',
+    });
+    for (let attempt = 0; attempt < 2; attempt += 1) {
+      const parts = Object.fromEntries(
+        formatter.formatToParts(new Date(instant)).map((part) => [part.type, part.value]),
+      );
+      const rendered = Date.UTC(
+        Number(parts.year), Number(parts.month) - 1, Number(parts.day),
+        Number(parts.hour), Number(parts.minute), Number(parts.second),
+      );
+      instant += desired - rendered;
+    }
+    return new Date(instant).toISOString();
+  } catch {
+    return null;
+  }
+}
+
 export function isSessionizeUrl(raw: string): boolean {
   try {
     const host = new URL(raw).hostname.toLowerCase();
@@ -50,10 +79,14 @@ export function normalizeSessionizeGrid(
                     return label && typeof label.name === 'string' ? [label.name] : [];
                   }) : [];
             }) : [];
+        const start = sessionizeInstant(item.startsAt, input.timezone);
+        const end = typeof item.endsAt === 'string'
+          ? sessionizeInstant(item.endsAt, input.timezone)
+          : null;
+        if (!start || (typeof item.endsAt === 'string' && !end)) return null;
         sessions.push({
           id: item.id, title: item.title, room: room.name, speakers, labels,
-          isService: item.isServiceSession, start: item.startsAt,
-          end: typeof item.endsAt === 'string' ? item.endsAt : null,
+          isService: item.isServiceSession, start, end,
         });
       }
     }
