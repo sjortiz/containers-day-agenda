@@ -5,6 +5,8 @@ import { useRouter } from 'next/navigation';
 import type { Agenda } from '@/types';
 import { fetchSessionizeAgenda, isSessionizeUrl } from '@/lib/sessionize';
 import { saveAgendaCache, upsertEvent } from '@/lib/storage';
+import { parseEventShareUrl } from '@/lib/event-share';
+import QrScanner from './QrScanner';
 
 export default function AddEventPanel({ onImported }: { onImported: (agenda: Agenda) => void }) {
   const router = useRouter();
@@ -57,6 +59,16 @@ export default function AddEventPanel({ onImported }: { onImported: (agenda: Age
               <input id="agenda-url" name="agenda-url" type="url" inputMode="url"
                 value={url} onChange={(event) => setUrl(event.target.value)} autoComplete="off"
                 placeholder="https://sessionize.com/api/v2/…/view/GridSmart" required />
+              <QrScanner onDetected={(value) => {
+                try {
+                  const shared = parseEventShareUrl(value);
+                  setUrl(shared.sourceUrl);
+                  if (shared.name) setName(shared.name);
+                  setMessage(null);
+                } catch {
+                  setMessage('Ese código QR no contiene un enlace válido.');
+                }
+              }} />
               <button type="submit" disabled={busy}>{busy ? 'Agregando…' : 'Agregar evento'}</button>
             </form>
             {message ? <p className="add-event__message" role="alert">{message}</p> : null}

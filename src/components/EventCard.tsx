@@ -5,6 +5,7 @@ import {
   eventSessionSummary,
   providerLabel,
 } from '@/lib/event-summary';
+import ShareEventButton from './ShareEventButton';
 
 export default function EventCard({ agenda }: { agenda: Agenda }) {
   const { event } = agenda;
@@ -29,10 +30,13 @@ export default function EventCard({ agenda }: { agenda: Agenda }) {
         >
           <span aria-hidden="true">●</span> {refreshLabel}
         </span>
-        <span className="event-card__action">
-          Abrir agenda <span aria-hidden="true">→</span>
-        </span>
       </Link>
+      <div className="event-card__actions">
+        <Link className="event-card__action" href={`/event/?id=${encodeURIComponent(event.id)}`}>
+          Abrir agenda <span aria-hidden="true">→</span>
+        </Link>
+        {event.provider === 'sessionize' ? <ShareEventButton event={event} /> : null}
+      </div>
     </article>
   );
 }
