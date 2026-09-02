@@ -345,10 +345,39 @@ a {
   gap: 8px;
 }
 .qr-scanner__start,
-.qr-scanner__stop {
+.qr-scanner__stop,
+.qr-scanner__photo {
   width: fit-content;
   background: transparent !important;
   color: var(--accent-text) !important;
+}
+.qr-scanner__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.qr-scanner__photo {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 9px 14px;
+  border: 1px solid var(--accent);
+  border-radius: 10px;
+  font: inherit;
+  font-weight: 800;
+  cursor: pointer;
+}
+.qr-scanner__photo input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+.qr-scanner__photo:focus-within {
+  outline: 3px solid var(--accent-text);
+  outline-offset: 3px;
 }
 .qr-scanner__camera {
   display: grid;
@@ -357,6 +386,9 @@ a {
   border: 1px solid var(--border);
   border-radius: 12px;
   background: var(--bg);
+}
+.qr-scanner__camera[hidden] {
+  display: none;
 }
 .qr-scanner__camera video {
   display: block;
